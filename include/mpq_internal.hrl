@@ -1,3 +1,8 @@
+-define(LIBMPQ_HEADER, 16#1A51504D).
+-define(LIBMPQ_ARCHIVE_VERSION_ONE, 0).
+-define(LIBMPQ_ARCHIVE_VERSION_TWO, 1).
+
+
 -record(header, {
 	mpq_magic = 0,
 	header_size,
