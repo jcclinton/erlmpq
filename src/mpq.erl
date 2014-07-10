@@ -17,11 +17,12 @@ test() ->
 	Dir = "/Users/jclinton/Downloads/torrents/world_of_warcraft_classic/Data/",
 	Suffix = ".MPQ",
 	Filename = Dir ++ File ++ Suffix,
-	case archive_open(Filename, -1) of
-		{error, Error} -> {error, Error};
-		{ok, Archive} -> {ok, Archive}
-	end,
+	{ok, Archive} = archive_open(Filename, -1),
+	archive_close(Archive),
 	ok.
+
+archive_close(Archive) ->
+	file:close(Archive#archive.fd).
 
 
 archive_open(Filename, Offset) ->
@@ -39,9 +40,7 @@ archive_open(Filename, Offset) ->
 
 	Archive3 = add_hash_table_to_archive(Archive2),
 			
-
-	file:close(Fd),
-	{ok, Archive}.
+	{ok, Archive3}.
 
 
 add_hash_table_to_archive(Archive) ->
@@ -53,10 +52,41 @@ add_hash_table_to_archive(Archive) ->
 	TableCount = Archive#archive.header#header.hash_table_count,
 	Size = hash_table_size() * TableCount,
 
-	{ok, HashTables} = file:pread(Archive#archive.fd, Offset, Size),
+	{ok, HashBin} = file:pread(Archive#archive.fd, Offset, Size),
 	%allHashes is a list of hash records
-	AllHashes = get_all_hashes(HashTables),
-	Archive#archive{hash=AllHashes}.
+	%AllHashes = get_all_hashes(HashBin),
+	Seed = hash_string("(hash table)", 16#300),
+	DecryptedHashes = decrypt_hashes(HashBin, Size, Seed),
+	Archive#archive{hash=DecryptedHashes}.
+
+
+decrypt_hashes(Buffer, Size, Seed) ->
+	Seed2 = 16#EEEEEEEE,
+	decrypt_hashes(Buffer, Size, Seed, Seed2, <<>>).
+
+decrypt_hashes(_, Size, _, _, Acc) when Size < 4 -> Acc;
+decrypt_hashes(<<Buff?L, Rest/binary>>, Size, Seed, Seed2, <<Acc/binary>>) ->
+	CryptOffset = 16#400 + (Seed band 16#FF),
+	Seed2Out = Seed2 + crypt_buffer:get_offset(CryptOffset),
+	Char = Buff bxor (Seed + Seed2Out),
+	SeedOut = ((bnot Seed bsl 16#15) + 16#11111111) bor (Seed bsr 16#0B),
+	Seed2Out2 = Char + Seed2Out + (Seed2Out bsl 5) + 3,
+	decrypt_hashes(Rest, Size-4, SeedOut, Seed2Out2, <<Acc/binary, Char?L>>).
+
+
+
+hash_string(String, Offset) ->
+	Seed1In = 16#7FED7FED,
+	Seed2In = 16#EEEEEEEE,
+	StringUpper = string:to_upper(String),
+	{Seed1Out, _} = lists:foldl(fun(Char, {Seed1Acc,Seed2Acc}) ->
+		S1a = crypt_buffer:get_offset(Offset + Char),
+		S1b = Seed1Acc + Seed2Acc,
+		Seed1 = S1a bxor S1b,
+		Seed2 = Char + Seed1 + Seed2Acc + (Seed2Acc bsl 5) + 3,
+		{Seed1, Seed2}
+	end, {Seed1In, Seed2In}, StringUpper),
+	Seed1Out.
 
 
 get_all_hashes(HashTables) ->
