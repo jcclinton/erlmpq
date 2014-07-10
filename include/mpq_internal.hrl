@@ -2,6 +2,8 @@
 -define(LIBMPQ_ARCHIVE_VERSION_ONE, 0).
 -define(LIBMPQ_ARCHIVE_VERSION_TWO, 1).
 
+-define(BLOCK_SIZE, 512).
+
 
 -record(header, {
 	mpq_magic = 0,
@@ -17,7 +19,7 @@
 
 -record(header_ex, {
 	extended_offset,
-	hash_table_offset_high,
+	hash_table_offset_high = 0,
 	block_table_offset_high
 }).
 
@@ -55,12 +57,12 @@
 	fd,
 	block_size,
 	archive_offset,
-	header = #header{},
+	header,
 	header_ex = #header_ex{},
-	hash = #hash{},
-	block = #block{},
-	block_ex = #block_ex{},
-	file = #file{},
-	map = #map{},
+	hash,
+	block,
+	block_ex,
+	file,
+	map,
 	files = 0
 }).
