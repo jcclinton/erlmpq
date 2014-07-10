@@ -38,9 +38,38 @@ archive_open(Filename, Offset) ->
 		true -> Archive
 	end,
 
+	io:format("adding hash table to archive~n"),
 	Archive3 = add_hash_table_to_archive(Archive2),
+	io:format("adding block table to archive~n"),
+	Archive4 = add_block_to_archive(Archive3),
+
+	io:format("adding block ex table to archive~n"),
+	Archive5 = if Archive#archive.header_ex#header_ex.extended_offset > 0 ->
+			add_block_ex_to_archive(Archive4);
+		true ->
+			Archive4
+		end,
 			
-	{ok, Archive3}.
+	{ok, Archive5}.
+
+
+add_block_ex_to_archive(Archive) ->
+	Offset = Archive#archive.header_ex#header_ex.extended_offset + Archive#archive.archive_offset,
+	Size = block_ex_size() * Archive#archive.header#header.block_table_count,
+
+	{ok, BlocksExBin} = file:pread(Archive#archive.fd, Offset, Size),
+	Archive#archive{block_ex=BlocksExBin}.
+
+
+add_block_to_archive(Archive) ->
+	BlockTableOffsetHigh = Archive#archive.header_ex#header_ex.block_table_offset_high bsl 32,
+	Offset = Archive#archive.header#header.block_table_offset + Archive#archive.archive_offset + BlockTableOffsetHigh,
+	Size = block_size() * Archive#archive.header#header.block_table_count,
+
+	{ok, BlocksBin} = file:pread(Archive#archive.fd, Offset, Size),
+	Seed = hash_string("(block table)", 16#300),
+	DecryptedBlocks = decrypt_block(BlocksBin, Size, Seed),
+	Archive#archive{block=DecryptedBlocks}.
 
 
 add_hash_table_to_archive(Archive) ->
@@ -56,22 +85,26 @@ add_hash_table_to_archive(Archive) ->
 	%allHashes is a list of hash records
 	%AllHashes = get_all_hashes(HashBin),
 	Seed = hash_string("(hash table)", 16#300),
-	DecryptedHashes = decrypt_hashes(HashBin, Size, Seed),
+	DecryptedHashes = decrypt_block(HashBin, Size, Seed),
 	Archive#archive{hash=DecryptedHashes}.
 
 
-decrypt_hashes(Buffer, Size, Seed) ->
+decrypt_block(Buffer, Size, Seed) ->
 	Seed2 = 16#EEEEEEEE,
-	decrypt_hashes(Buffer, Size, Seed, Seed2, <<>>).
+	decrypt_block(Buffer, Size, Seed, Seed2, <<>>).
 
-decrypt_hashes(_, Size, _, _, Acc) when Size < 4 -> Acc;
-decrypt_hashes(<<Buff?L, Rest/binary>>, Size, Seed, Seed2, <<Acc/binary>>) ->
+decrypt_block(_, Size, _, _, Acc) when Size < 4 -> Acc;
+decrypt_block(<<Buff?L, Rest/binary>>, Size, Seed, Seed2, Acc) ->
+	if Size rem 100000 == 0 ->
+		io:format("decrypting block: ~p~n", [Size]);
+		true -> ok
+	end,
 	CryptOffset = 16#400 + (Seed band 16#FF),
 	Seed2Out = Seed2 + crypt_buffer:get_offset(CryptOffset),
 	Char = Buff bxor (Seed + Seed2Out),
 	SeedOut = ((bnot Seed bsl 16#15) + 16#11111111) bor (Seed bsr 16#0B),
 	Seed2Out2 = Char + Seed2Out + (Seed2Out bsl 5) + 3,
-	decrypt_hashes(Rest, Size-4, SeedOut, Seed2Out2, <<Acc/binary, Char?L>>).
+	decrypt_block(Rest, Size-4, SeedOut, Seed2Out2, <<Acc/binary, Char?L>>).
 
 
 
@@ -171,3 +204,9 @@ header_size() ->
 
 header_ex_size() ->
 	8 + 2 + 2.
+
+block_size() ->
+	4 + 4 + 4 + 4.
+
+block_ex_size() ->
+	2.

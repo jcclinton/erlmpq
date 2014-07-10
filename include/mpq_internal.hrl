@@ -18,9 +18,9 @@
 }).
 
 -record(header_ex, {
-	extended_offset,
+	extended_offset = 0,
 	hash_table_offset_high = 0,
-	block_table_offset_high
+	block_table_offset_high = 0
 }).
 
 -record(hash, {
