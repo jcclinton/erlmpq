@@ -3,6 +3,7 @@
 -define(LIBMPQ_ARCHIVE_VERSION_TWO, 1).
 
 -define(BLOCK_SIZE, 512).
+-define(FLAG_EXISTS, 16#80000000).
 
 
 -record(header, {

@@ -1,6 +1,6 @@
 -module(mpq).
 
--export([]).
+-export([archive_open/2]).
 -compile([export_all]).
 
 -include("include/binary.hrl").
@@ -49,8 +49,33 @@ archive_open(Filename, Offset) ->
 		true ->
 			Archive4
 		end,
+
+	io:format("adding map table to archive~n"),
+	Archive6 = add_map_to_archive(Archive5),
 			
-	{ok, Archive5}.
+	{ok, Archive6}.
+
+
+add_map_to_archive(Archive) ->
+	TableCount = Archive#archive.header#header.block_table_count,
+	EmptyMap = binary:copy(<<0?Q>>, TableCount),
+	Size = map_size(),
+
+	{Map, Count} = lists:foldl(fun(I, {Map, Count}) ->
+		Diff = I - Count,
+		Offset = I * Size,
+		<<Head:Offset/binary, Indices?L, _OldDiff?L, Tail/binary>> = Map,
+		Map1 = <<Head/binary, Indices?L, Diff?L, Tail/binary>>,
+		Flags = get_block_flags(I, Archive#archive.block),
+		NotExists = Flags band ?FLAG_EXISTS == 0,
+		if NotExists -> {Map1, Count};
+			not NotExists ->
+				<<Head2:Count/binary, _OldIndices?L, Diff2?L, Tail2/binary>> = Map1,
+				Map2 = <<Head2/binary, I?L, Diff2?L, Tail2/binary>>,
+				{Map2, Count+1}
+		end
+	end, {EmptyMap, 0}, lists:seq(0, TableCount-1)),
+	Archive#archive{map=Map, files=Count}.
 
 
 add_block_ex_to_archive(Archive) ->
@@ -59,6 +84,13 @@ add_block_ex_to_archive(Archive) ->
 
 	{ok, BlocksExBin} = file:pread(Archive#archive.fd, Offset, Size),
 	Archive#archive{block_ex=BlocksExBin}.
+
+
+get_block_flags(Offset, Blocks) ->
+	Size = block_size() * 8,
+	SizeSansFlags = Size - 32,
+	<<_:Offset/binary, _:SizeSansFlags/integer, Flags?L, _/binary>> = Blocks,
+	Flags.
 
 
 add_block_to_archive(Archive) ->
@@ -195,9 +227,11 @@ extract_header(ArchiveIn, ArchiveOffset) ->
 
 
 
+map_size() ->
+	4 + 4.
+
 hash_table_size() ->
 	4 + 4 + 2 + 2 + 4.
-
 
 header_size() ->
 	4 + 4 + 4 + 2 + 2 + 4 + 4 + 4 + 4.
