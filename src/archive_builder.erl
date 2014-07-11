@@ -114,6 +114,11 @@ extract_header(ArchiveIn, ArchiveOffset) ->
 			io:format("version: ~p~n", [Version]),
 			io:format("block table count: ~p~n", [BlockTableCount]),
 			io:format("hash table count: ~p~n", [HashTableCount]),
+
+			io:format("header size: ~p~n", [RealHeaderSize]),
+			io:format("archive version: ~p~n", [ArchiveVersion]),
+			io:format("hash table offset: ~p~n", [HashTableOffset]),
+			io:format("block table offset: ~p~n", [BlockTableOffset]),
 			{ok, #header{
 				mpq_magic = MpqMagic,
 				header_size = RealHeaderSize,
