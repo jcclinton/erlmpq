@@ -1,6 +1,6 @@
 -module(util).
 
--export([get_block_flags/2, get_hash_table_at_offset/2, get_map_at_offset/2]).
+-export([get_block_at_offset/2, get_hash_table_at_offset/2, get_map_at_offset/2]).
 -export([map_size/0, hash_table_size/0, header_size/0, header_ex_size/0, block_size/0, block_ex_size/0]).
 
 -include("include/binary.hrl").
@@ -18,11 +18,9 @@ get_hash_table_at_offset(Offset, Hashes) ->
 
 
 %% gets flag for block at given offset of blocks blob
-get_block_flags(Offset, Blocks) ->
-	Size = block_size() * 8,
-	SizeSansFlags = Size - 32,
-	<<_:Offset/binary, _:SizeSansFlags/integer, Flags?L, _/binary>> = Blocks,
-	Flags.
+get_block_at_offset(Offset, Blocks) ->
+	<<_:Offset/binary, BlockOffset?L, PackedSize?L, UnpackedSize?L, Flags?L, _/binary>> = Blocks,
+	#block{offset=BlockOffset, packed_size=PackedSize, unpacked_size=UnpackedSize, flags=Flags}.
 
 
 

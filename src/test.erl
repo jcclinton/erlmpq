@@ -18,7 +18,7 @@ run() ->
 
 
 get_file_list_to(Archive) ->
-	FileNumber = mpq:file_number(Archive, "(listfile)"),
+	%FileNumber = mpq:file_number(Archive, "(listfile)"),
 	ok.
 
 extract_file() ->
