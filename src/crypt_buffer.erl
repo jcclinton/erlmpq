@@ -1,9 +1,9 @@
 -module(crypt_buffer).
 
--export([get_offset/1]).
+-export([get_buffer_by_offset/1]).
 
 
-get_offset(Offset) ->
+get_buffer_by_offset(Offset) ->
 	% add one to offset because the buffer starts at indices zero
 	lists:nth(Offset+1, get_buffer()).
 

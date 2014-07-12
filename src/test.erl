@@ -3,6 +3,32 @@
 -export([]).
 -compile([export_all]).
 
+-include("include/binary.hrl").
+
+
+encrypt() ->
+	HashBin = <<100?L, 200?L, 99?L, 1000?L>>,
+	Seed = crypto:hash_string("(hash table)", 16#300),
+	Size = byte_size(HashBin),
+	io:format("input: ~p~n", [HashBin]),
+	Encrypted = crypto:encrypt_block(HashBin, Size, Seed),
+	io:format("encrypted: ~p~n", [Encrypted]),
+	HashBin = crypto:decrypt_block(Encrypted, Size, Seed),
+	io:format("decrypted: ~p~n", [HashBin]),
+	ok.
+
+	
+decrypt() ->
+	HashBin = <<100?L, 200?L, 99?L, 1000?L>>,
+	Seed = crypto:hash_string("(hash table)", 16#300),
+	Size = byte_size(HashBin),
+	io:format("input: ~p~nSeed: ~p~nsize: ~p~n", [HashBin, Seed, Size]),
+	<<DecryptedHashes?L, DH2?L, DH3?L, DH4?L>> = crypto:decrypt_block(HashBin, Size, Seed),
+	io:format("decrypt: ~p~n", [DecryptedHashes]),
+	io:format("decrypt2: ~p~n", [DH2]),
+	io:format("decrypt3: ~p~n", [DH3]),
+	io:format("decrypt4: ~p~n", [DH4]),
+	ok.
 
 
 run() ->
