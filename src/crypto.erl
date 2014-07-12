@@ -43,6 +43,7 @@ decrypt_block(<<Buff?L, Rest/binary>>, Size, Seed, Seed2, Acc) ->
 	Char = Buff bxor util:add_32bit([Seed, Seed2Out]),
 	SeedOut = util:add_32bit([bnot Seed bsl 16#15, 16#11111111]) bor (Seed bsr 16#0B),
 	Seed2Out2 = util:add_32bit([Char, Seed2Out, Seed2Out bsl 5, 3]),
+	%io:format("inbuf: ~p~n", [Char]),
 	decrypt_block(Rest, Size-4, SeedOut, Seed2Out2, <<Acc/binary, Char?L>>).
 
 
