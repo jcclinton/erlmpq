@@ -1,6 +1,6 @@
 -module(archive).
 
--export([get_map_at_offset/2, get_hash_table_at_offset/2, get_block_at_offset/2]).
+-export([get_map_at_offset/2, get_hash_table_at_offset/2, get_block_at_offset/2, get_block_ex_at_offset/2]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
@@ -23,3 +23,12 @@ get_block_at_offset(Blocks, OffsetIn) ->
 	Offset = OffsetIn * util:block_size(),
 	<<_:Offset/binary, BlockOffset?L, PackedSize?L, UnpackedSize?L, Flags?L, _/binary>> = Blocks,
 	#block{offset=BlockOffset, packed_size=PackedSize, unpacked_size=UnpackedSize, flags=Flags}.
+
+get_block_ex_at_offset(BlockExs, OffsetIn) ->
+	OffsetOut = if BlockExs == undefined -> 0;
+		true ->
+			Offset = OffsetIn * util:block_ex_size(),
+			<<_:Offset/binary, OffsetHigh?W, _/binary>> = BlockExs,
+			OffsetHigh
+	end,
+	#block_ex{offset_high=OffsetOut}.

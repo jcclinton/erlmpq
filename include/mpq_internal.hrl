@@ -4,7 +4,9 @@
 
 -define(HASH_FREE, 16#FFFFFFFF).
 -define(BLOCK_SIZE, 512).
+
 -define(FLAG_EXISTS, 16#80000000).
+-define(FLAG_SINGLE, 16#01000000).
 
 
 -record(header, {

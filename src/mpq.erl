@@ -1,7 +1,7 @@
 -module(mpq).
 
 -export([archive_open/1, archive_open/2, archive_close/1]).
--export([file_number/2]).
+-export([file_number/2, file_read/2]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
@@ -34,6 +34,66 @@ archive_open(Filename, Offset) ->
 	end, Archive, BuildFuns),
 	{ok, ArchiveOut}.
 
+file_read(Archive, Number) ->
+	_Valid = util:check_file_num(Archive, Number),
+	UnpackedSize = file_unpacked_size(Archive, Number),
+	FileOffset = file_offset(Archive, Number),
+	Blocks = file_blocks(Archive, Number),
+	block_open_offset(Archive, Number),
+
+	ok.
+
+
+block_unpacked_size(Archive, Number, I) ->
+	ok.
+
+block_close_offset(Archive, Number) ->
+	ok.
+
+block_read(Archive, Number, I) ->
+	ok.
+
+block_open_offset(Archive, Number) ->
+	ok.
+
+
+
+file_blocks(Archive, Number) ->
+	_Valid = util:check_file_num(Archive, Number),
+	Map = archive:get_map_at_offset(Archive#archive.map, Number),
+	I = Map#map.block_table_indices,
+	Block = archive:get_block_at_offset(Archive#archive.block, I),
+	Flags = Block#block.flags,
+	HasFlag = util:has_flag(Flags, ?FLAG_SINGLE),
+	if HasFlag -> 1;
+		not HasFlag ->
+			UnpackedSize = Block#block.unpacked_size,
+			BlockSize = Archive#archive.block_size,
+			(UnpackedSize + BlockSize - 1) div BlockSize
+	end.
+
+
+file_offset(Archive, Number) ->
+	_Valid = util:check_file_num(Archive, Number),
+	Map = archive:get_map_at_offset(Archive#archive.map, Number),
+	I = Map#map.block_table_indices,
+	Block = archive:get_block_at_offset(Archive#archive.block, I),
+	BlockEx = archive:get_block_ex_at_offset(Archive#archive.block_ex, I),
+	Offset = Block#block.offset,
+	OffsetHigh = BlockEx#block_ex.offset_high bsl 32,
+	Offset + OffsetHigh.
+
+
+
+
+file_unpacked_size(Archive, Number) ->
+	_Valid = util:check_file_num(Archive, Number),
+	Map = archive:get_map_at_offset(Archive#archive.map, Number),
+	I = Map#map.block_table_indices,
+	Block = archive:get_block_at_offset(Archive#archive.block, I),
+	Block#block.unpacked_size.
+		
+
 
 file_number(Archive, Filename) ->
 	HTCount = Archive#archive.header#header.hash_table_count,
@@ -41,7 +101,6 @@ file_number(Archive, Filename) ->
 	Hash2 = crypto:hash_string(Filename, 16#100),
 	Hash3 = crypto:hash_string(Filename, 16#200),
 	Number = loop_hash(Archive, Hash1, Hash1, Hash2, Hash3, HTCount),
-	io:format("file number: ~p~n", [Number]),
 	Number.
 
 

@@ -19,7 +19,7 @@ add_map_to_archive(Archive) ->
 		Map1 = <<Head/binary, Indices?L, Diff?L, Tail/binary>>,
 		Block = archive:get_block_at_offset(Archive#archive.block, I),
 		Flags = Block#block.flags,
-		Exists = Flags band ?FLAG_EXISTS /= 0,
+		Exists = util:has_flag(Flags, ?FLAG_EXISTS),
 		if not Exists -> {Map1, Count};
 			Exists ->
 				<<Head2:Count/binary, _OldIndices?L, Diff2?L, Tail2/binary>> = Map1,

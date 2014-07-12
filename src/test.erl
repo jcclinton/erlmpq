@@ -40,14 +40,14 @@ run() ->
 	Filename = Dir ++ File ++ Suffix,
 	{ok, Archive} = mpq:archive_open(Filename),
 	%output_archive(Archive),
-	Files = get_file_list_to(Archive),
+	_Files = get_file_list_to(Archive),
 	mpq:archive_close(Archive),
 	ok.
 
 output_archive(Archive) ->
 	lists:foreach(fun(I) ->
 		Hashes = Archive#archive.hash,
-		Hash = archive:get_hash_table_at_offset(Hashes, I),
+		_Hash = archive:get_hash_table_at_offset(Hashes, I),
 		%io:format("locale: ~p~n", [Hash#hash.locale]),
 		ok
 	end, lists:seq(0, Archive#archive.header#header.hash_table_count-1)),
@@ -69,6 +69,8 @@ output_archive(Archive) ->
 
 get_file_list_to(Archive) ->
 	FileNumber = mpq:file_number(Archive, "(listfile)"),
+	_Buffer = mpq:file_read(Archive, FileNumber),
+	io:format("file number: ~p~n", [FileNumber]),
 	ok.
 
 extract_file() ->

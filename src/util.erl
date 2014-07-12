@@ -1,7 +1,7 @@
 -module(util).
 
 -export([map_size/0, hash_table_size/0, header_size/0, header_ex_size/0, block_size/0, block_ex_size/0]).
--export([add_32bit/1]).
+-export([add_32bit/1, has_flag/2, check_file_num/2]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
@@ -13,6 +13,15 @@ add_32bit(L) ->
 	lists:foldl(fun(N, Sum) ->
 		(N + Sum) band 16#FFFFFFFF
 	end, 0, L).
+
+
+check_file_num(Archive, Num) ->
+	Num > Archive#archive.files - 1 orelse Num < 0.
+
+
+
+has_flag(Flags, Flag) ->
+	Flags band Flag /= 0.
 
 
 
