@@ -31,10 +31,12 @@ hash_string(String, Offset) ->
 	Seed2In = 16#EEEEEEEE,
 	StringUpper = string:to_upper(String),
 	{Seed1Out, _} = lists:foldl(fun(Char, {Seed1Acc,Seed2Acc}) ->
-		S1a = crypt_buffer:get_offset(Offset + Char),
-		S1b = Seed1Acc + Seed2Acc,
+		Index = util:add_32bit([Offset, Char]),
+		S1a = crypt_buffer:get_offset(Index),
+		S1b = util:add_32bit([Seed1Acc, Seed2Acc]),
 		Seed1 = S1a bxor S1b,
-		Seed2 = Char + Seed1 + Seed2Acc + (Seed2Acc bsl 5) + 3,
+		Seed2 = util:add_32bit([Char, Seed1, Seed2Acc, (Seed2Acc bsl 5), 3]),
 		{Seed1, Seed2}
 	end, {Seed1In, Seed2In}, StringUpper),
 	Seed1Out.
+

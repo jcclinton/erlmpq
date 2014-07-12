@@ -2,6 +2,7 @@
 
 -export([get_block_at_offset/2, get_hash_table_at_offset/2, get_map_at_offset/2]).
 -export([map_size/0, hash_table_size/0, header_size/0, header_ex_size/0, block_size/0, block_ex_size/0]).
+-export([add_32bit/1]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
@@ -21,6 +22,14 @@ get_hash_table_at_offset(Offset, Hashes) ->
 get_block_at_offset(Offset, Blocks) ->
 	<<_:Offset/binary, BlockOffset?L, PackedSize?L, UnpackedSize?L, Flags?L, _/binary>> = Blocks,
 	#block{offset=BlockOffset, packed_size=PackedSize, unpacked_size=UnpackedSize, flags=Flags}.
+
+
+
+%% add numbers in list, keep limited to 32 bits
+add_32bit(L) ->
+	lists:foldl(fun(N, Sum) ->
+		(N + Sum) band 16#FFFFFFFF
+	end, 0, L).
 
 
 
