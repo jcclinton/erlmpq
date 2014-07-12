@@ -47,7 +47,7 @@ file_number(Archive, Filename) ->
 
 loop_hash(Archive, I, Hash1, Hash2, Hash3, HTCount) ->
 	Hashes = Archive#archive.hash,
-	Hash = util:get_hash_table_at_offset(I, Hashes),
+	Hash = archive:get_hash_table_at_offset(Hashes, I),
 	HashA = Hash#hash.hash_a,
 	HashB = Hash#hash.hash_b,
 	BlockTableIndex = Hash#hash.block_table_index,
@@ -57,7 +57,7 @@ loop_hash(Archive, I, Hash1, Hash2, Hash3, HTCount) ->
 		true ->
 			if HashA == Hash2 andalso HashB == Hash3 ->
 					Maps = Archive#archive.map,
-					Map = util:get_map_at_offset(BlockTableIndex, Maps),
+					Map = archive:get_map_at_offset(Maps, BlockTableIndex),
 					Diff = Map#map.block_table_diff,
 					BlockTableIndex - Diff;
 				true ->

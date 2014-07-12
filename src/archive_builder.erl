@@ -17,11 +17,11 @@ add_map_to_archive(Archive) ->
 		Offset = I * Size,
 		<<Head:Offset/binary, Indices?L, _OldDiff?L, Tail/binary>> = Map,
 		Map1 = <<Head/binary, Indices?L, Diff?L, Tail/binary>>,
-		Block = util:get_block_at_offset(I, Archive#archive.block),
+		Block = archive:get_block_at_offset(Archive#archive.block, I),
 		Flags = Block#block.flags,
-		NotExists = Flags band ?FLAG_EXISTS == 0,
-		if NotExists -> {Map1, Count};
-			not NotExists ->
+		Exists = Flags band ?FLAG_EXISTS /= 0,
+		if not Exists -> {Map1, Count};
+			Exists ->
 				<<Head2:Count/binary, _OldIndices?L, Diff2?L, Tail2/binary>> = Map1,
 				Map2 = <<Head2/binary, I?L, Diff2?L, Tail2/binary>>,
 				{Map2, Count+1}
