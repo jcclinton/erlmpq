@@ -21,7 +21,7 @@ open_offset(Archive, FileNumber) ->
 			% 8 bytes
 			4 * 2;
 		true ->
-			(Block#block.unpacked_size + BlockSize - 1) div (BlockSize + 1)
+			4 * ((Block#block.unpacked_size + BlockSize - 1) div (BlockSize + 1))
 	end,
 	HasExtra = util:has_flag(Flags, ?FLAG_EXTRA),
 	PackedSize = if HasExtra -> PackedSize1 + 4;
@@ -45,7 +45,7 @@ open_offset(Archive, FileNumber) ->
 					DecryptedPackedOffset = crypto:decrypt_block(PackedOffset, PackedSize, Seed - 1),
 					#file{seed=Seed, packed_offset=DecryptedPackedOffset, open_count=OpenCount};
 				true ->
-					{#file{seed=0, packed_offset=PackedOffset, open_count=OpenCount}, Flags}
+					#file{seed=0, packed_offset=PackedOffset, open_count=OpenCount}
 			end,
 			{File, NewFlags};
 		true ->

@@ -13,7 +13,7 @@
 add_32bit(L) ->
 	lists:foldl(fun(N, Acc) ->
 		Num = (N + Acc) band 16#FFFFFFFF,
-		Bin = <<Num?UL>>,
+		Bin = <<Num?SL>>,
 		<<Out?L>> = Bin,
 		Out
 	end, 0, L).
@@ -23,8 +23,8 @@ add_32bit(L) ->
 %% convert from signed to unsigned and keep limited to 32 bits
 sub_32bit([El|Rest]) ->
 	lists:foldl(fun(N, Acc) ->
-		Num = (N - Acc) band 16#FFFFFFFF,
-		Bin = <<Num?UL>>,
+		Num = (Acc - N) band 16#FFFFFFFF,
+		Bin = <<Num?SL>>,
 		<<Out?L>> = Bin,
 		Out
 	end, El, Rest).

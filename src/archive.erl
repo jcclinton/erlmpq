@@ -18,19 +18,22 @@ update_block_at_offset(BlocksBin, Block, OffsetIn) ->
 	<<Head/binary, BlockOffset?L, PackedSize?L, UnpackedSize?L, Flags?L, Rest/binary>>.
 
 
-update_file_at_offset(FilesBin, File, OffsetIn) ->
-	Offset = OffsetIn * util:file_size(),
-	Seed = File#file.seed,
-	PackedOffset = File#file.packed_offset,
-	OpenCount = File#file.open_count,
-	<<Head:Offset/binary, _OldSeed?L, _OldPackedOffset?L, _OldOpenCount?L, Rest/binary>> = FilesBin,
-	<<Head/binary, Seed?L, PackedOffset?L, OpenCount?L, Rest/binary>>.
+update_file_at_offset(Files, File, OffsetIn) ->
+	%Offset = OffsetIn * util:file_size(),
+	%Seed = File#file.seed,
+	%PackedOffset = File#file.packed_offset,
+	%OpenCount = File#file.open_count,
+	%<<Head:Offset/binary, _OldSeed?L, _OldPackedOffset?L, _OldOpenCount?L, Rest/binary>> = FilesBin,
+	%<<Head/binary, Seed?L, PackedOffset?L, OpenCount?L, Rest/binary>>.
+	{Head, [_|Tail]} = lists:split(OffsetIn, Files),
+	Head ++ [File|Tail].
 
 
 get_file_at_offset(File, OffsetIn) ->
-	Offset = OffsetIn * util:file_size(),
-	<<_:Offset/binary, Seed?L, PackedOffset?L, OpenCount?L, _/binary>> = File,
-	#file{seed=Seed, packed_offset=PackedOffset, open_count=OpenCount}.
+	%Offset = OffsetIn * util:file_size(),
+	%<<_:Offset/binary, Seed?L, PackedOffset?L, OpenCount?L, _/binary>> = File,
+	%#file{seed=Seed, packed_offset=PackedOffset, open_count=OpenCount}.
+	lists:nth(OffsetIn + 1, File).
 
 get_map_at_offset(Map, OffsetIn) ->
 	Offset = OffsetIn * util:map_size(),

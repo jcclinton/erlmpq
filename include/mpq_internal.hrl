@@ -58,7 +58,7 @@
 -record(file, {
 	seed,
 	packed_offset,
-	open_count
+	open_count = 0
 }).
 
 -record(map, {

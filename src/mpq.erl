@@ -77,7 +77,7 @@ block_open_offset(Archive, FileNumber) ->
 	Files = Archive#archive.file,
 	File = archive:get_file_at_offset(Files, FileNumber),
 	Blocks = Archive#archive.block,
-	Block = archive:get_file_at_offset(Blocks, FileNumber),
+	Block = archive:get_block_at_offset(Blocks, FileNumber),
 	Flags = Block#block.flags,
 	{NewFile, NewFlags} = if File#file.open_count > 0 ->
 			{File#file{open_count=File#file.open_count + 1}, Flags};

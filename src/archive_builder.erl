@@ -10,7 +10,10 @@
 add_file_to_archive(Archive) ->
 	BlockCount = Archive#archive.header#header.block_table_count,
 	Size = util:file_size() * BlockCount,
-	File = binary:copy(<<0>>, Size),
+	%File = binary:copy(<<0>>, Size),
+	File = lists:foldl(fun(_, L) ->
+		[#file{}|L]
+	end, [], lists:seq(1, Size)),
 	Archive#archive{file=File}.
 
 

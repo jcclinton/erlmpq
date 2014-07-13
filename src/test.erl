@@ -69,8 +69,8 @@ output_archive(Archive) ->
 
 get_file_list_to(Archive) ->
 	FileNumber = mpq:file_number(Archive, "(listfile)"),
-	_Buffer = mpq:file_read(Archive, FileNumber),
 	io:format("file number: ~p~n", [FileNumber]),
+	_Buffer = mpq:file_read(Archive, FileNumber),
 	ok.
 
 extract_file() ->
