@@ -1,10 +1,18 @@
 -module(archive_builder).
 
 -export([add_header_to_archive/3]).
--export([add_map_to_archive/1, add_block_ex_to_archive/1, add_block_to_archive/1, add_hash_table_to_archive/1, add_header_ex_to_archive/1]).
+-export([add_map_to_archive/1, add_block_ex_to_archive/1, add_block_to_archive/1, add_hash_table_to_archive/1, add_header_ex_to_archive/1, add_file_to_archive/1]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
+
+
+add_file_to_archive(Archive) ->
+	BlockCount = Archive#archive.header#header.block_table_count,
+	Size = util:file_size() * BlockCount,
+	File = binary:copy(<<0>>, Size),
+	Archive#archive{file=File}.
+
 
 
 add_map_to_archive(Archive) ->

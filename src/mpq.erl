@@ -27,7 +27,8 @@ archive_open(Filename, Offset) ->
 		fun archive_builder:add_hash_table_to_archive/1,
 		fun archive_builder:add_block_to_archive/1,
 		fun archive_builder:add_block_ex_to_archive/1,
-		fun archive_builder:add_map_to_archive/1
+		fun archive_builder:add_map_to_archive/1,
+		fun archive_builder:add_file_to_archive/1
 	],
 	ArchiveOut = lists:foldl(fun(Fun, Arch) ->
 		Fun(Arch)
@@ -35,7 +36,7 @@ archive_open(Filename, Offset) ->
 	{ok, ArchiveOut}.
 
 
-file_read(Archive, Number) ->
+file_read(Archive, FileNumber) ->
 	_Valid = util:check_file_num(Archive, FileNumber),
 	UnpackedSize = file_unpacked_size(Archive, FileNumber),
 	FileOffset = file_offset(Archive, FileNumber),
@@ -65,10 +66,6 @@ block_unpacked_size(Archive, FileNumber, BlockNumber) ->
 	end.
 
 
-block_close_offset(Archive, FileNumber) ->
-	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
-	NewOpenCount = Archive#archive
-	ok.
 
 block_read(Archive, Number, I) ->
 	ok.
@@ -77,6 +74,9 @@ block_open_offset(Archive, FileNumber) ->
 	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
 	ok.
 
+block_close_offset(Archive, FileNumber) ->
+	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
+	ok.
 
 
 file_blocks(Archive, Number) ->
