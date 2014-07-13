@@ -76,7 +76,19 @@ block_open_offset(Archive, FileNumber) ->
 
 block_close_offset(Archive, FileNumber) ->
 	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
-	ok.
+	Files = Archive#archive.file,
+	File = archive:get_file_at_offset(Files, FileNumber),
+	if File == 0 -> Archive;
+		File > 0 ->
+			NewFileCount = File#file.open_count - 1,
+			NewFile = if NewFileCount == 0 ->
+					File#file{open_count=NewFileCount, packed_offset=0, seed=0};
+				NewFileCount > 0 ->
+					File#file{open_count=NewFileCount}
+			end,
+			NewFiles = archive:update_file_at_offset(Files, NewFile, FileNumber),
+			Archive#archive{file=NewFiles}
+	end.
 
 
 file_blocks(Archive, Number) ->

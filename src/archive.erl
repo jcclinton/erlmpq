@@ -1,10 +1,20 @@
 -module(archive).
 
--export([get_map_at_offset/2, get_hash_table_at_offset/2, get_block_at_offset/2, get_block_ex_at_offset/2]).
--export([get_file_at_offset/2]).
+-export([get_map_at_offset/2, get_hash_table_at_offset/2, get_block_at_offset/2, get_block_ex_at_offset/2, get_file_at_offset/2]).
+-export([update_file_at_offset/3]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
+
+
+
+update_file_at_offset(FilesBin, File, OffsetIn) ->
+	Offset = OffsetIn * util:file_size(),
+	Seed = File#file.seed,
+	PackedOffset = File#file.packed_offset,
+	OpenCount = File#file.open_count,
+	<<Head:Offset/binary, _OldSeed?L, _OldPackedOffset?L, _OldOpenCount?L, Rest/binary>> = FilesBin,
+	<<Head/binary, Seed?L, PackedOffset?L, OpenCount?L, Rest/binary>>.
 
 
 get_file_at_offset(File, OffsetIn) ->
