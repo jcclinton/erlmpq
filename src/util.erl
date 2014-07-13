@@ -1,18 +1,33 @@
 -module(util).
 
 -export([map_size/0, hash_table_size/0, header_size/0, header_ex_size/0, block_size/0, block_ex_size/0, file_size/0]).
--export([add_32bit/1, has_flag/2, check_file_num/2, check_block_num/2]).
+-export([add_32bit/1, sub_32bit/1, has_flag/2, check_file_num/2, check_block_num/2]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
 
 
 
-%% add numbers in list, keep limited to 32 bits
+%% add numbers in list
+%% convert from signed to unsigned and keep limited to 32 bits
 add_32bit(L) ->
-	lists:foldl(fun(N, Sum) ->
-		(N + Sum) band 16#FFFFFFFF
+	lists:foldl(fun(N, Acc) ->
+		Num = (N + Acc) band 16#FFFFFFFF,
+		Bin = <<Num?UL>>,
+		<<Out?L>> = Bin,
+		Out
 	end, 0, L).
+
+
+%% sub numbers in list, starting with first element
+%% convert from signed to unsigned and keep limited to 32 bits
+sub_32bit([El|Rest]) ->
+	lists:foldl(fun(N, Acc) ->
+		Num = (N - Acc) band 16#FFFFFFFF,
+		Bin = <<Num?UL>>,
+		<<Out?L>> = Bin,
+		Out
+	end, El, Rest).
 
 
 check_file_num(Archive, Num) ->
