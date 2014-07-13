@@ -2,6 +2,7 @@
 
 -export([archive_open/1, archive_open/2, archive_close/1]).
 -export([file_number/2, file_read/2]).
+-export([block_close_offset/2, block_open_offset/2, block_unpacked_size/3]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
@@ -67,12 +68,29 @@ block_unpacked_size(Archive, FileNumber, BlockNumber) ->
 
 
 
+
 block_read(Archive, Number, I) ->
 	ok.
 
 block_open_offset(Archive, FileNumber) ->
 	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
-	ok.
+	Files = Archive#archive.file,
+	File = archive:get_file_at_offset(Files, FileNumber),
+	Blocks = Archive#archive.block,
+	Block = archive:get_file_at_offset(Blocks, FileNumber),
+	Flags = Block#block.flags,
+	{NewFile, NewFlags} = if File#file.open_count > 0 ->
+			{File#file{open_count=File#file.open_count + 1}, Flags};
+		true ->
+			block:open_offset(Archive, FileNumber)
+	end,
+	NewBlocks = if Flags == NewFlags -> Blocks;
+		true ->
+			NewBlock = Block#block{flags=NewFlags},
+			archive:update_block_at_offset(Blocks, NewBlock, FileNumber)
+	end,
+	NewFiles = archive:update_file_at_offset(Files, NewFile, FileNumber),
+	Archive#archive{file=NewFiles, block=NewBlocks}.
 
 block_close_offset(Archive, FileNumber) ->
 	_ValidFileNumber = util:check_file_num(Archive, FileNumber),

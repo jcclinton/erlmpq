@@ -1,6 +1,8 @@
 -module(crypto).
 
--export([decrypt_block/3, encrypt_block/3, hash_string/2]).
+-export([decrypt_block/3, encrypt_block/3]).
+-export([hash_string/2]).
+-export([decrypt_key/3]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
@@ -46,6 +48,10 @@ decrypt_block(<<Buff?L, Rest/binary>>, Size, Seed, Seed2, Acc) ->
 	%io:format("inbuf: ~p~n", [Char]),
 	decrypt_block(Rest, Size-4, SeedOut, Seed2Out2, <<Acc/binary, Char?L>>).
 
+
+decrypt_key(Buffer, InSize, BlockSize) ->
+	Key = 1,
+	Key.
 
 
 hash_string(String, Offset) ->
