@@ -34,26 +34,47 @@ archive_open(Filename, Offset) ->
 	end, Archive, BuildFuns),
 	{ok, ArchiveOut}.
 
+
 file_read(Archive, Number) ->
-	_Valid = util:check_file_num(Archive, Number),
-	UnpackedSize = file_unpacked_size(Archive, Number),
-	FileOffset = file_offset(Archive, Number),
-	Blocks = file_blocks(Archive, Number),
-	block_open_offset(Archive, Number),
+	_Valid = util:check_file_num(Archive, FileNumber),
+	UnpackedSize = file_unpacked_size(Archive, FileNumber),
+	FileOffset = file_offset(Archive, FileNumber),
+	Blocks = file_blocks(Archive, FileNumber),
+	block_open_offset(Archive, FileNumber),
 
 	ok.
 
 
-block_unpacked_size(Archive, Number, I) ->
-	ok.
+block_unpacked_size(Archive, FileNumber, BlockNumber) ->
+	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
+	_ValidBlockNumber = util:check_block_num(Archive, BlockNumber),
+	Map = util:get_map_at_offset(Archive#archive.map, FileNumber),
+	I = Map#map.block_table_indices,
+	Block = util:get_block_at_offset(Archive#archive.block, I),
+	Flags = Block#block.flags,
+	HasFlag = util:has_flag(Flags, ?FLAG_SINGLE),
+	UnpackedSize = Block#block.unpacked_size,
+	BlockSize = Archive#archive.block_size,
+	if HasFlag -> UnpackedSize;
+		true ->
+			TotalSize = ((UnpackedSize + BlockSize - 1) div BlockSize) - 1,
+			if BlockNumber < TotalSize -> BlockSize;
+				true ->
+					UnpackedSize - (BlockSize * BlockNumber)
+			end
+	end.
 
-block_close_offset(Archive, Number) ->
+
+block_close_offset(Archive, FileNumber) ->
+	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
+	NewOpenCount = Archive#archive
 	ok.
 
 block_read(Archive, Number, I) ->
 	ok.
 
-block_open_offset(Archive, Number) ->
+block_open_offset(Archive, FileNumber) ->
+	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
 	ok.
 
 

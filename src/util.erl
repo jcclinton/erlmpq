@@ -21,7 +21,7 @@ check_file_num(Archive, Num) ->
 check_block_num(Archive, Num) ->
 	if Num < 0 -> false;
 		true ->
-			Map = archive:get_map_at_offset(Archive, Num),
+			Map = archive:get_map_at_offset(Archive#archive.map, Num),
 			I = Map#map.block_table_indices,
 			Block = archive:get_block_at_offset(Archive, I),
 			Flags = Block#block.flags,
@@ -30,7 +30,7 @@ check_block_num(Archive, Num) ->
 				true ->
 					UnpackedSize = Block#block.unpacked_size,
 					BlockSize = Archive#archive.block_size,
-					(UnpackedSize + BlockSize - 1) / BlockSize
+					(UnpackedSize + BlockSize - 1) div BlockSize
 			end,
 			if Num >= Val -> false;
 				true -> true
