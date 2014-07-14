@@ -2,10 +2,18 @@
 
 -export([open_offset/2]).
 -export([decompress_block/4]).
+-export([get_flags_at_file_number/2]).
 
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
+
+
+get_flags_at_file_number(Archive, FileNumber) ->
+	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
+	I = Map#map.block_table_indices,
+	Block = archive:get_block_at_offset(Archive#archive.block, I),
+	Block#block.flags.
 
 
 decompress_block(Buffer, InSize, OutSize, Flag) ->

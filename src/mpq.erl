@@ -38,7 +38,7 @@ archive_open(Filename, Offset) ->
 
 
 file_read(Archive, FileNumber) ->
-	_Valid = util:check_file_num(Archive, FileNumber),
+	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
 	%FileOffset = file_offset(Archive, FileNumber),
 	Blocks = file_blocks(Archive, FileNumber),
 	Archive2 = block_open_offset(Archive, FileNumber),
@@ -55,10 +55,10 @@ file_read(Archive, FileNumber) ->
 
 block_unpacked_size(Archive, FileNumber, BlockNumber) ->
 	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
-	_ValidBlockNumber = util:check_block_num(Archive, BlockNumber),
-	Map = util:get_map_at_offset(Archive#archive.map, FileNumber),
+	%_ValidBlockNumber = util:check_block_num(Archive, BlockNumber),
+	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
 	I = Map#map.block_table_indices,
-	Block = util:get_block_at_offset(Archive#archive.block, I),
+	Block = archive:get_block_at_offset(Archive#archive.block, I),
 	Flags = Block#block.flags,
 	HasFlag = util:has_flag(Flags, ?FLAG_SINGLE),
 	UnpackedSize = Block#block.unpacked_size,
