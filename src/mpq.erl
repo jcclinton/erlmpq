@@ -48,7 +48,7 @@ file_read(Archive, FileNumber) ->
 		UnpackedSize = block_unpacked_size(Archive2, FileNumber, I),
 		%io:format("Unpacked size: ~p~n", [UnpackedSize]),
 		OutBuf = block_read(Archive2, FileNumber, I, UnpackedSize),
-		<<Acc/binary, OutBuf/binary>>
+		<<Acc/bitstring, OutBuf/bitstring>>
 	end, <<>>, lists:seq(0, Blocks-1)),
 
 	ArchiveOut = block_close_offset(Archive2, FileNumber),

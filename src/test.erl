@@ -40,7 +40,7 @@ run() ->
 	Filename = Dir ++ File ++ Suffix,
 	{ok, Archive} = mpq:archive_open(Filename),
 	%output_archive(Archive),
-	{ArchiveOut, Files} = get_file_list_to(Archive),
+	{ArchiveOut, FileList} = get_file_list_to(Archive),
 	mpq:archive_close(ArchiveOut),
 	ok.
 
@@ -71,8 +71,10 @@ get_file_list_to(Archive) ->
 	FileNumber = mpq:file_number(Archive, "(listfile)"),
 	io:format("file number: ~p~n", [FileNumber]),
 	{ArchiveOut, Buffer} = mpq:file_read(Archive, FileNumber),
+	FileList = binary:split(Buffer, <<"\r\n">>, [global]),
 	%io:format("buffer: ~p~n", [Buffer]),
-	{ArchiveOut, Buffer}.
+	%io:format("List: ~p~n", [FileList]),
+	{ArchiveOut, FileList}.
 
 extract_file() ->
 	ok.
