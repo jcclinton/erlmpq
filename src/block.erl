@@ -1,10 +1,27 @@
 -module(block).
 
 -export([open_offset/2]).
+-export([decompress_block/4]).
 
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
+
+
+decompress_block(Buffer, InSize, OutSize, Flag) ->
+	if Flag == ?FLAG_COMPRESS_NONE -> Buffer;
+		true ->
+			% check if block is really compressed
+			% some blocks have set the compression flag
+			% but are really not compressed
+			if InSize < OutSize -> Buffer;
+				true ->
+					% not implemented
+					io:format("trying to decompress using unimplemented flag: ~p~n", [Flag]),
+					Buffer
+			end
+	end.
+
 
 
 % opens previously unopened block

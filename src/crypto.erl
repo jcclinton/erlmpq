@@ -3,7 +3,6 @@
 -export([decrypt_block/3, encrypt_block/3]).
 -export([hash_string/2]).
 -export([decrypt_key/3]).
--export([decompress_block/3]).
 -export([block_seed/3]).
 
 -include("include/binary.hrl").
@@ -11,13 +10,10 @@
 
 
 block_seed(Archive, FileNumber, BlockNumber) ->
-	1.
-
-
-
-
-decompress_block(Buffer, InSize, Flag) ->
-	Buffer.
+	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
+	_ValidBlockNumber = util:check_block_num(Archive, BlockNumber),
+	File = archive:get_file_at_offset(Archive#archive.file, FileNumber),
+	File#file.seed + BlockNumber.
 
 
 encrypt_block(Buffer, Size, Seed) ->

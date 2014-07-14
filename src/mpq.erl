@@ -2,7 +2,7 @@
 
 -export([archive_open/1, archive_open/2, archive_close/1]).
 -export([file_number/2, file_read/2, file_unpacked_size/2, file_offset/2]).
--export([block_close_offset/2, block_open_offset/2, block_unpacked_size/3, block_read/3]).
+-export([block_close_offset/2, block_open_offset/2, block_unpacked_size/3, block_read/4]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
@@ -44,8 +44,8 @@ file_read(Archive, FileNumber) ->
 	Archive2 = block_open_offset(Archive, FileNumber),
 
 	Buffer = lists:foldl(fun(I, Acc) ->
-		%UnpackedSize = block_unpacked_size(Archive2, FileNumber, I),
-		OutBuf = block_read(Archive2, FileNumber, I),
+		UnpackedSize = block_unpacked_size(Archive2, FileNumber, I),
+		OutBuf = block_read(Archive2, FileNumber, I, UnpackedSize),
 		<<Acc/binary, OutBuf/binary>>
 	end, <<>>, lists:seq(0, Blocks-1)),
 
@@ -75,7 +75,7 @@ block_unpacked_size(Archive, FileNumber, BlockNumber) ->
 
 
 
-block_read(Archive, FileNumber, BlockNumber) ->
+block_read(Archive, FileNumber, BlockNumber, OutSize) ->
 	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
 	I = Map#map.block_table_indices,
 	Block = archive:get_block_at_offset(Archive#archive.block, I),
@@ -100,18 +100,18 @@ block_read(Archive, FileNumber, BlockNumber) ->
 
 	IsCompressed = archive_file:is_compressed(Archive, FileNumber),
 	Buffer2 = if IsCompressed ->
-			crypto:decompress_block(Buffer1, InSize, ?FLAG_COMPRESS_MULTI);
+			block:decompress_block(Buffer1, InSize, OutSize, ?FLAG_COMPRESS_MULTI);
 		true -> Buffer1
 	end,
 
 	IsImploded = archive_file:is_imploded(Archive, FileNumber),
 	Buffer3 = if IsImploded ->
-			crypto:decompress_block(Buffer2, InSize, ?FLAG_COMPRESS_PKZIP);
+			block:decompress_block(Buffer2, InSize, OutSize, ?FLAG_COMPRESS_PKZIP);
 		true -> Buffer2
 	end,
 
 	Buffer4 = if not IsCompressed andalso not IsImploded ->
-			crypto:decompress_block(Buffer3, InSize, ?FLAG_COMPRESS_NONE);
+			block:decompress_block(Buffer3, InSize, OutSize, ?FLAG_COMPRESS_NONE);
 		true -> Buffer3
 	end,
 	Buffer4.
