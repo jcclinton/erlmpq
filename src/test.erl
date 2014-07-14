@@ -36,13 +36,27 @@ run() ->
 	%Files = ["dbc", "terrain", "patch", "patch-2"],
 	File = "dbc",
 	Dir = "/Users/jclinton/Downloads/torrents/world_of_warcraft_classic/Data/",
+	OutDir = "/Users/jclinton/projects/erlang/erlmpq/data/",
 	Suffix = ".MPQ",
 	Filename = Dir ++ File ++ Suffix,
 	{ok, Archive} = mpq:archive_open(Filename),
 	%output_archive(Archive),
 	{ArchiveOut, FileList} = get_file_list_to(Archive),
+	extract_dbc_files(ArchiveOut, FileList, OutDir),
 	mpq:archive_close(ArchiveOut),
 	ok.
+
+extract_dbc_files(Archive, FileList, Dir) ->
+	lists:foreach(fun(FilenameIn) ->
+		Filename = binary:replace(FilenameIn, <<"\\">>, <<"/">>, [global]),
+		Name = Dir ++ binary_to_list(Filename),
+		io:format("filename: ~p~n", [Name]),
+		{ok, Fd} = file:open(Name, [write, binary]),
+		ok = file:write(Fd, <<"hi">>),
+		file:close(Fd)
+	end, FileList).
+
+
 
 output_archive(Archive) ->
 	lists:foreach(fun(I) ->
@@ -71,7 +85,8 @@ get_file_list_to(Archive) ->
 	FileNumber = mpq:file_number(Archive, "(listfile)"),
 	io:format("file number: ~p~n", [FileNumber]),
 	{ArchiveOut, Buffer} = mpq:file_read(Archive, FileNumber),
-	FileList = binary:split(Buffer, <<"\r\n">>, [global]),
+	FileList1 = binary:split(Buffer, <<"\r\n">>, [global]),
+	FileList = lists:filter(fun(Name) -> Name /= <<"">> end, FileList1),
 	%io:format("buffer: ~p~n", [Buffer]),
 	%io:format("List: ~p~n", [FileList]),
 	{ArchiveOut, FileList}.
