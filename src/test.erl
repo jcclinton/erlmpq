@@ -47,14 +47,22 @@ run() ->
 	ok.
 
 extract_dbc_files(Archive, FileList, Dir) ->
-	lists:foreach(fun(FilenameIn) ->
+	lists:foldl(fun(FilenameIn, ArchiveIn) ->
 		Filename = binary:replace(FilenameIn, <<"\\">>, <<"/">>, [global]),
 		Name = Dir ++ binary_to_list(Filename),
 		io:format("filename: ~p~n", [Name]),
 		{ok, Fd} = file:open(Name, [write, binary]),
-		ok = file:write(Fd, <<"hi">>),
-		file:close(Fd)
-	end, FileList).
+		FileNumber = mpq:file_number(ArchiveIn, binary_to_list(FilenameIn)),
+		%UnpackedSize = mpq:file_unpacked_size(Archive, FileNumber),
+		io:format("filenumber: ~p~n", [FileNumber]),
+		%io:format("unpacked size: ~p~n", [UnpackedSize]),
+		{ArchiveOut, Buffer} = mpq:file_read(ArchiveIn, FileNumber),
+		%io:format("buffer: ~p~n", [Buffer]),
+
+		ok = file:write(Fd, Buffer),
+		file:close(Fd),
+		ArchiveOut
+	end, Archive, FileList).
 
 
 
@@ -83,7 +91,7 @@ output_archive(Archive) ->
 
 get_file_list_to(Archive) ->
 	FileNumber = mpq:file_number(Archive, "(listfile)"),
-	io:format("file number: ~p~n", [FileNumber]),
+	%io:format("file number: ~p~n", [FileNumber]),
 	{ArchiveOut, Buffer} = mpq:file_read(Archive, FileNumber),
 	FileList1 = binary:split(Buffer, <<"\r\n">>, [global]),
 	FileList = lists:filter(fun(Name) -> Name /= <<"">> end, FileList1),

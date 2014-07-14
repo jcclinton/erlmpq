@@ -185,9 +185,9 @@ file_offset(Archive, Number) ->
 
 
 
-file_unpacked_size(Archive, Number) ->
-	_Valid = util:check_file_num(Archive, Number),
-	Map = archive:get_map_at_offset(Archive#archive.map, Number),
+file_unpacked_size(Archive, FileNumber) ->
+	_Valid = util:check_file_num(Archive, FileNumber),
+	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
 	I = Map#map.block_table_indices,
 	Block = archive:get_block_at_offset(Archive#archive.block, I),
 	Block#block.unpacked_size.
