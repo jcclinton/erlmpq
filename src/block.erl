@@ -22,7 +22,8 @@ decompress_block(Buffer, InSize, OutSize, Flag) ->
 			% check if block is really compressed
 			% some blocks have set the compression flag
 			% but are really not compressed
-			if InSize < OutSize -> Buffer;
+					%io:format("insize: ~p~noutsize: ~p~n", [InSize, OutSize]),
+			if InSize >= OutSize -> Buffer;
 				true ->
 					% not implemented
 					io:format("trying to decompress using unimplemented flag: ~p~n", [Flag]),
@@ -46,7 +47,7 @@ open_offset(Archive, FileNumber) ->
 			% 8 bytes
 			4 * 2;
 		true ->
-			4 * ((Block#block.unpacked_size + BlockSize - 1) div (BlockSize + 1))
+			4 * (((Block#block.unpacked_size + BlockSize - 1) div BlockSize) + 1)
 	end,
 	HasExtra = util:has_flag(Flags, ?FLAG_EXTRA),
 	PackedSize = if HasExtra -> PackedSize1 + 4;

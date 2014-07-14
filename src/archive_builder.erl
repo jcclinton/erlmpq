@@ -33,7 +33,8 @@ add_map_to_archive(Archive) ->
 		Exists = util:has_flag(Flags, ?FLAG_EXISTS),
 		if not Exists -> {Map1, Count};
 			Exists ->
-				<<Head2:Count/binary, _OldIndices?L, Diff2?L, Tail2/binary>> = Map1,
+				CountOffset = Count * Size,
+				<<Head2:CountOffset/binary, _OldIndices?L, Diff2?L, Tail2/binary>> = Map1,
 				Map2 = <<Head2/binary, I?L, Diff2?L, Tail2/binary>>,
 				{Map2, Count+1}
 		end

@@ -41,10 +41,12 @@ file_read(Archive, FileNumber) ->
 	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
 	%FileOffset = file_offset(Archive, FileNumber),
 	Blocks = file_blocks(Archive, FileNumber),
+	%io:format("block: ~p~n", [Blocks]),
 	Archive2 = block_open_offset(Archive, FileNumber),
 
 	Buffer = lists:foldl(fun(I, Acc) ->
 		UnpackedSize = block_unpacked_size(Archive2, FileNumber, I),
+		%io:format("Unpacked size: ~p~n", [UnpackedSize]),
 		OutBuf = block_read(Archive2, FileNumber, I, UnpackedSize),
 		<<Acc/binary, OutBuf/binary>>
 	end, <<>>, lists:seq(0, Blocks-1)),
@@ -128,6 +130,7 @@ block_open_offset(Archive, FileNumber) ->
 		true ->
 			block:open_offset(Archive, FileNumber)
 	end,
+	%io:format("new file: ~p~n", [NewFile]),
 	NewBlocks = if Flags == NewFlags -> Blocks;
 		true ->
 			NewBlock = Block#block{flags=NewFlags},
@@ -153,9 +156,9 @@ block_close_offset(Archive, FileNumber) ->
 	end.
 
 
-file_blocks(Archive, Number) ->
-	_Valid = util:check_file_num(Archive, Number),
-	Map = archive:get_map_at_offset(Archive#archive.map, Number),
+file_blocks(Archive, FileNumber) ->
+	_Valid = util:check_file_num(Archive, FileNumber),
+	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
 	I = Map#map.block_table_indices,
 	Block = archive:get_block_at_offset(Archive#archive.block, I),
 	Flags = Block#block.flags,
@@ -164,7 +167,8 @@ file_blocks(Archive, Number) ->
 		not HasFlag ->
 			UnpackedSize = Block#block.unpacked_size,
 			BlockSize = Archive#archive.block_size,
-			(UnpackedSize + BlockSize - 1) div BlockSize
+			Numer = (UnpackedSize + BlockSize - 1),
+			Numer div BlockSize
 	end.
 
 
