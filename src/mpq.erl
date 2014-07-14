@@ -1,8 +1,8 @@
 -module(mpq).
 
 -export([archive_open/1, archive_open/2, archive_close/1]).
--export([file_number/2, file_read/2]).
--export([block_close_offset/2, block_open_offset/2, block_unpacked_size/3]).
+-export([file_number/2, file_read/2, file_unpacked_size/2, file_offset/2]).
+-export([block_close_offset/2, block_open_offset/2, block_unpacked_size/3, block_read/3]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
@@ -39,12 +39,18 @@ archive_open(Filename, Offset) ->
 
 file_read(Archive, FileNumber) ->
 	_Valid = util:check_file_num(Archive, FileNumber),
-	UnpackedSize = file_unpacked_size(Archive, FileNumber),
-	FileOffset = file_offset(Archive, FileNumber),
+	%FileOffset = file_offset(Archive, FileNumber),
 	Blocks = file_blocks(Archive, FileNumber),
-	block_open_offset(Archive, FileNumber),
+	Archive2 = block_open_offset(Archive, FileNumber),
 
-	ok.
+	Buffer = lists:foldl(fun(I, Acc) ->
+		%UnpackedSize = block_unpacked_size(Archive2, FileNumber, I),
+		OutBuf = block_read(Archive2, FileNumber, I),
+		<<Acc/binary, OutBuf/binary>>
+	end, <<>>, lists:seq(0, Blocks-1)),
+
+	ArchiveOut = block_close_offset(Archive2, FileNumber),
+	{ArchiveOut, Buffer}.
 
 
 block_unpacked_size(Archive, FileNumber, BlockNumber) ->
@@ -69,8 +75,46 @@ block_unpacked_size(Archive, FileNumber, BlockNumber) ->
 
 
 
-block_read(Archive, Number, I) ->
-	ok.
+block_read(Archive, FileNumber, BlockNumber) ->
+	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
+	I = Map#map.block_table_indices,
+	Block = archive:get_block_at_offset(Archive#archive.block, I),
+	Offset = Block#block.offset,
+	BlockEx = archive:get_block_ex_at_offset(Archive#archive.block_ex, I),
+	OffsetHigh = BlockEx#block_ex.offset_high bsl 32,
+	File = archive:get_file_at_offset(Archive#archive.file, FileNumber),
+	PackedOffset = archive:get_file_packed_offset_at_offset(File#file.packed_offset, BlockNumber),
+	BlockOffset = Offset + OffsetHigh + PackedOffset + Archive#archive.archive_offset,
+	PackedOffset2 = archive:get_file_packed_offset_at_offset(File#file.packed_offset, BlockNumber + 1),
+	InSize = if PackedOffset2 == 0 -> PackedOffset;
+		true -> PackedOffset2 - PackedOffset
+	end,
+	{ok, BufferIn} = file:pread(Archive#archive.fd, BlockOffset, InSize),
+	IsEncrypted = archive_file:is_encrypted(Archive, FileNumber),
+	Buffer1 = if IsEncrypted ->
+			Seed = crypto:block_seed(Archive, FileNumber, BlockNumber),
+			crypto:decrypt_block(BufferIn, InSize, Seed);
+		true ->
+			BufferIn
+	end,
+
+	IsCompressed = archive_file:is_compressed(Archive, FileNumber),
+	Buffer2 = if IsCompressed ->
+			crypto:decompress_block(Buffer1, InSize, ?FLAG_COMPRESS_MULTI);
+		true -> Buffer1
+	end,
+
+	IsImploded = archive_file:is_imploded(Archive, FileNumber),
+	Buffer3 = if IsImploded ->
+			crypto:decompress_block(Buffer2, InSize, ?FLAG_COMPRESS_PKZIP);
+		true -> Buffer2
+	end,
+
+	Buffer4 = if not IsCompressed andalso not IsImploded ->
+			crypto:decompress_block(Buffer3, InSize, ?FLAG_COMPRESS_NONE);
+		true -> Buffer3
+	end,
+	Buffer4.
 
 block_open_offset(Archive, FileNumber) ->
 	_ValidFileNumber = util:check_file_num(Archive, FileNumber),

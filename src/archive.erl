@@ -1,6 +1,6 @@
 -module(archive).
 
--export([get_map_at_offset/2, get_hash_table_at_offset/2, get_block_at_offset/2, get_block_ex_at_offset/2, get_file_at_offset/2]).
+-export([get_map_at_offset/2, get_hash_table_at_offset/2, get_block_at_offset/2, get_block_ex_at_offset/2, get_file_at_offset/2, get_file_packed_offset_at_offset/2]).
 -export([update_block_at_offset/3, update_file_at_offset/3]).
 
 -include("include/binary.hrl").
@@ -28,6 +28,14 @@ update_file_at_offset(Files, File, OffsetIn) ->
 	{Head, [_|Tail]} = lists:split(OffsetIn, Files),
 	Head ++ [File|Tail].
 
+get_file_packed_offset_at_offset(PackedOffset, OffsetIn) ->
+	Offset = OffsetIn * util:file_packed_offset_size(),
+	Size = byte_size(PackedOffset),
+	if Offset >= Size -> 0;
+		true ->
+			<<_:Offset/binary, Val?L, _/binary>> = PackedOffset,
+			Val
+	end.
 
 get_file_at_offset(File, OffsetIn) ->
 	%Offset = OffsetIn * util:file_size(),

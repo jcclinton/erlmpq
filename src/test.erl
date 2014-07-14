@@ -40,8 +40,8 @@ run() ->
 	Filename = Dir ++ File ++ Suffix,
 	{ok, Archive} = mpq:archive_open(Filename),
 	%output_archive(Archive),
-	_Files = get_file_list_to(Archive),
-	mpq:archive_close(Archive),
+	{ArchiveOut, Files} = get_file_list_to(Archive),
+	mpq:archive_close(ArchiveOut),
 	ok.
 
 output_archive(Archive) ->
@@ -70,8 +70,9 @@ output_archive(Archive) ->
 get_file_list_to(Archive) ->
 	FileNumber = mpq:file_number(Archive, "(listfile)"),
 	io:format("file number: ~p~n", [FileNumber]),
-	_Buffer = mpq:file_read(Archive, FileNumber),
-	ok.
+	{ArchiveOut, Buffer} = mpq:file_read(Archive, FileNumber),
+	io:format("buffer: ~p~n", [Buffer]),
+	{ArchiveOut, Buffer}.
 
 extract_file() ->
 	ok.
