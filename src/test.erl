@@ -51,13 +51,13 @@ run_internal(File) ->
 	Filename = Dir ++ File ++ Suffix,
 	{ok, Archive} = mpq:archive_open(Filename),
 	%output_archive(Archive),
-	{ArchiveOut, FileList} = get_file_list_to(Archive),
+	{ArchiveOut, FileList} = get_file_list_to(Archive, <<".dbc">>),
 	extract_dbc_files(ArchiveOut, FileList, OutDir),
 	mpq:archive_close(ArchiveOut),
 	ok.
 
 archive() ->
-	File = "patch",
+	File = "dbc",
 	Dir = "/Users/jclinton/Downloads/torrents/world_of_warcraft_classic/Data/",
 	Suffix = ".MPQ",
 	Filename = Dir ++ File ++ Suffix,
@@ -66,7 +66,7 @@ archive() ->
 
 create_files(Archive) ->
 	OutDir = "/Users/jclinton/projects/erlang/erlmpq/data",
-	{ArchiveOut, FileList} = get_file_list_to(Archive),
+	{ArchiveOut, FileList} = get_file_list_to(Archive, <<".dbc">>),
 	extract_dbc_files(ArchiveOut, FileList, OutDir),
 	ok.
 
@@ -116,12 +116,21 @@ output_archive(Archive) ->
 
 
 
-get_file_list_to(Archive) ->
+get_file_list_to(Archive, Ext) ->
 	FileNumber = mpq:file_number(Archive, "(listfile)"),
 	%io:format("file number: ~p~n", [FileNumber]),
 	{ArchiveOut, Buffer} = mpq:file_read(Archive, FileNumber),
 	FileList1 = binary:split(Buffer, <<"\r\n">>, [global]),
-	FileList = lists:filter(fun(Name) -> Name /= <<"">> end, FileList1),
+	FileList = lists:filter(fun(Name) ->
+		if Name == <<"">> -> false;
+			Name /= <<"">> ->
+				% check if it has the correct extension
+				NameExt = binary:part(Name, {byte_size(Name), byte_size(Ext) * -1}),
+				if NameExt == Ext -> true;
+					NameExt /= Ext -> false
+				end
+		end
+	end, FileList1),
 	%io:format("buffer: ~p~n", [Buffer]),
 	%io:format("List: ~p~n", [FileList]),
 	{ArchiveOut, FileList}.
