@@ -2,9 +2,26 @@
 
 -export([map_size/0, hash_table_size/0, header_size/0, header_ex_size/0, block_size/0, block_ex_size/0, file_size/0, file_packed_offset_size/0]).
 -export([add_32bit/1, sub_32bit/1, has_flag/2, check_file_num/2, check_block_num/2]).
+-export([make_dir/2]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
+
+
+
+% takes a filename, fully qualified with directory
+% and strips out the filename and creates the directories
+make_dir(BaseDir, Filename) ->
+	Sep = "/",
+	Tokens = string:tokens(Filename, Sep),
+	[_|RevDirs] = lists:reverse(Tokens),
+	Dirs = lists:reverse(RevDirs),
+	%Sep ++ string:join(Dirs, Sep) ++ Sep.
+	lists:foldl(fun(DirName, Path) ->
+		NewPath = Path ++ Sep ++ DirName,
+		file:make_dir(NewPath),
+		NewPath
+	end, BaseDir, Dirs).
 
 
 

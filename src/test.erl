@@ -32,11 +32,21 @@ decrypt() ->
 	ok.
 
 
+run_all() ->
+	Files = ["dbc", "terrain", "patch", "patch-2"],
+	lists:foreach(fun(File) ->
+		io:format("running ~p~n", [File]),
+		run_internal(File)
+	end, Files).
+
+
 run() ->
-	%Files = ["dbc", "terrain", "patch", "patch-2"],
-	File = "dbc",
+	File = "terrain",
+	run_internal(File).
+
+run_internal(File) ->
 	Dir = "/Users/jclinton/Downloads/torrents/world_of_warcraft_classic/Data/",
-	OutDir = "/Users/jclinton/projects/erlang/erlmpq/data/",
+	OutDir = "/Users/jclinton/projects/erlang/erlmpq/data",
 	Suffix = ".MPQ",
 	Filename = Dir ++ File ++ Suffix,
 	{ok, Archive} = mpq:archive_open(Filename),
@@ -46,15 +56,32 @@ run() ->
 	mpq:archive_close(ArchiveOut),
 	ok.
 
+archive() ->
+	File = "patch",
+	Dir = "/Users/jclinton/Downloads/torrents/world_of_warcraft_classic/Data/",
+	Suffix = ".MPQ",
+	Filename = Dir ++ File ++ Suffix,
+	{ok, Archive} = mpq:archive_open(Filename),
+	Archive.
+
+create_files(Archive) ->
+	OutDir = "/Users/jclinton/projects/erlang/erlmpq/data",
+	{ArchiveOut, FileList} = get_file_list_to(Archive),
+	extract_dbc_files(ArchiveOut, FileList, OutDir),
+	ok.
+
+
 extract_dbc_files(Archive, FileList, Dir) ->
 	lists:foldl(fun(FilenameIn, ArchiveIn) ->
-		Filename = binary:replace(FilenameIn, <<"\\">>, <<"/">>, [global]),
-		Name = Dir ++ binary_to_list(Filename),
-		io:format("filename: ~p~n", [Name]),
+		FilenameBin = binary:replace(FilenameIn, <<"\\">>, <<"/">>, [global]),
+		Filename = binary_to_list(FilenameBin),
+		Name = Dir ++ "/" ++ Filename,
+		%io:format("filename: ~p~n", [Name]),
+		util:make_dir(Dir, Filename),
 		{ok, Fd} = file:open(Name, [write, binary]),
 		FileNumber = mpq:file_number(ArchiveIn, binary_to_list(FilenameIn)),
 		%UnpackedSize = mpq:file_unpacked_size(Archive, FileNumber),
-		io:format("filenumber: ~p~n", [FileNumber]),
+		%io:format("filenumber: ~p~n", [FileNumber]),
 		%io:format("unpacked size: ~p~n", [UnpackedSize]),
 		{ArchiveOut, Buffer} = mpq:file_read(ArchiveIn, FileNumber),
 		%io:format("buffer: ~p~n", [Buffer]),
