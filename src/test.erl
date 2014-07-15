@@ -71,6 +71,13 @@ create_files(Archive) ->
 	ok.
 
 
+extract_dbc(Archive) ->
+	FileList = [<<"DBFilesClient\\AnimationData.dbc">>],
+	OutDir = "/Users/jclinton/projects/erlang/erlmpq/data",
+	_ = extract_dbc_files(Archive, FileList, OutDir),
+	ok.
+
+
 extract_dbc_files(Archive, FileList, Dir) ->
 	lists:foldl(fun(FilenameIn, ArchiveIn) ->
 		FilenameBin = binary:replace(FilenameIn, <<"\\">>, <<"/">>, [global]),
@@ -85,6 +92,7 @@ extract_dbc_files(Archive, FileList, Dir) ->
 		%io:format("unpacked size: ~p~n", [UnpackedSize]),
 		{ArchiveOut, Buffer} = mpq:file_read(ArchiveIn, FileNumber),
 		%io:format("buffer: ~p~n", [Buffer]),
+		io:format("buffer size: ~p~n", [byte_size(Buffer)]),
 
 		ok = file:write(Fd, Buffer),
 		file:close(Fd),

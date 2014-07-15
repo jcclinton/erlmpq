@@ -4,34 +4,9 @@
 -export([hash_string/2]).
 -export([decrypt_key/3]).
 -export([block_seed/3]).
--export([decompress_multi/1, decompress_pkzip/1]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
-
-
-decompress_pkzip(Buffer) ->
-	Buffer.
-
-decompress_multi(<<_?B, Buffer/binary>>) ->
-	decompress_zlib(Buffer).
-
-decompress_zlib(Buffer) ->
-	Z = zlib:open(),
-	ok = zlib:inflateInit(Z),
-	BuffOut = zlib:inflate(Z, Buffer),
-	ok = zlib:close(Z),
-	if is_list(BuffOut) ->
-			combine(BuffOut);
-		true -> BuffOut
-	end.
-
-combine(Buff) ->
-	combine(Buff, <<>>).
-
-combine([], Acc) -> Acc;
-combine([Bin|Rest], Acc) ->
-	combine(Rest, <<Acc/binary, Bin/binary>>).
 
 
 block_seed(Archive, FileNumber, BlockNumber) ->

@@ -5,6 +5,7 @@
 -define(HASH_FREE, 16#FFFFFFFF).
 -define(BLOCK_SIZE, 512).
 
+
 -define(FLAG_EXISTS, 16#80000000).
 
 -define(FLAG_ENCRYPTED, 16#00010000).
@@ -16,6 +17,15 @@
 
 -define(FLAG_SINGLE, 16#01000000).
 -define(FLAG_EXTRA, 16#04000000).
+
+
+
+-define(COMPRESSION_HUFFMAN, 16#01).            %% huffman compression. (used on wave files only and introduced in starcraft) */
+-define(COMPRESSION_ZLIB, 16#02).            %% zlib compression. (introduced in warcraft 3) */
+-define(COMPRESSION_PKZIP, 16#08).            %% pkware dcl compression. (first used compression algorithm) */
+-define(COMPRESSION_BZIP2, 16#10).            %% bzip compression. (introduced in warcraft 3 - the frozen throne) */
+-define(COMPRESSION_WAVE_MONO, 16#40).            %% adpcm 4:1 compression. (introduced in starcraft) */
+-define(COMPRESSION_WAVE_STEREO, 16#80).            %% adpcm 4:1 compression. (introduced in starcraft) */
 
 
 -record(header, {

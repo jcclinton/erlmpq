@@ -26,9 +26,9 @@ decompress_block(Buffer, InSize, OutSize, Flag) ->
 			if InSize >= OutSize -> Buffer;
 				true ->
 					if Flag == ?FLAG_COMPRESS_MULTI ->
-							crypto:decompress_multi(Buffer);
+							extract:decompress_multi(Buffer);
 						Flag == ?FLAG_COMPRESS_PKZIP ->
-							crypto:decompress_pkzip(Buffer);
+							extract:decompress_pkzip(Buffer);
 						true ->
 							io:format("trying to decompress using unimplemented flag: ~p~n", [Flag]),
 							Buffer
