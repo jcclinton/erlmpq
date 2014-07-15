@@ -48,16 +48,9 @@ decompress_zlib(Buffer) ->
 	BuffOut = zlib:inflate(Z, Buffer),
 	ok = zlib:close(Z),
 	if is_list(BuffOut) ->
-			combine(BuffOut);
+			list_to_binary(BuffOut);
 		true -> BuffOut
 	end.
-
-combine(Buff) ->
-	combine(Buff, <<>>).
-
-combine([], Acc) -> Acc;
-combine([Bin|Rest], Acc) ->
-	combine(Rest, <<Acc/binary, Bin/binary>>).
 
 
 get_decompression_table() ->
