@@ -9,6 +9,9 @@
 -include("include/mpq_internal.hrl").
 
 
+% abstraction for a common pattern
+% given a file number, look up the block indices
+% grab the block and return the flags
 get_flags_at_file_number(Archive, FileNumber) ->
 	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
 	I = Map#map.block_table_indices,
@@ -16,6 +19,7 @@ get_flags_at_file_number(Archive, FileNumber) ->
 	Block#block.flags.
 
 
+% decompress a block of data
 decompress_block(Buffer, InSize, OutSize, Flag) ->
 	if Flag == ?FLAG_COMPRESS_NONE -> Buffer;
 		true ->
@@ -38,10 +42,10 @@ decompress_block(Buffer, InSize, OutSize, Flag) ->
 
 
 
-
+% find unpacked size of a block
 unpacked_size(Archive, FileNumber, BlockNumber) ->
-	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
-	%_ValidBlockNumber = util:check_block_num(Archive, BlockNumber),
+	ok = util:check_file_num(Archive, FileNumber),
+	ok = util:check_block_num(Archive, BlockNumber),
 	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
 	I = Map#map.block_table_indices,
 	Block = archive:get_block_at_offset(Archive#archive.block, I),
@@ -60,7 +64,8 @@ unpacked_size(Archive, FileNumber, BlockNumber) ->
 
 
 
-
+% read a block of data
+% handles any decompression if needed
 read(Archive, FileNumber, BlockNumber, OutSize) ->
 	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
 	I = Map#map.block_table_indices,
@@ -104,15 +109,17 @@ read(Archive, FileNumber, BlockNumber, OutSize) ->
 
 
 open_offset(Archive, FileNumber) ->
-	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
+	ok = util:check_file_num(Archive, FileNumber),
 	Files = Archive#archive.file,
 	File = archive:get_file_at_offset(Files, FileNumber),
 	Blocks = Archive#archive.block,
 	Block = archive:get_block_at_offset(Blocks, FileNumber),
 	Flags = Block#block.flags,
 	{NewFile, NewFlags} = if File#file.open_count > 0 ->
+			% already opened, increment open_count and return file data
 			{File#file{open_count=File#file.open_count + 1}, Flags};
 		true ->
+			% open file data
 			open_offset_internal(Archive, FileNumber)
 	end,
 	%io:format("new file: ~p~n", [NewFile]),
@@ -184,8 +191,9 @@ open_offset_internal(Archive, FileNumber) ->
 
 
 
+% closes file at offset
 close_offset(Archive, FileNumber) ->
-	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
+	ok = util:check_file_num(Archive, FileNumber),
 	Files = Archive#archive.file,
 	File = archive:get_file_at_offset(Files, FileNumber),
 	if File == 0 -> Archive;

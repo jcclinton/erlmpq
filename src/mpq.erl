@@ -8,18 +8,22 @@
 
 
 
-
-archive_close(Archive) ->
-	wrap_output(archive, close, [Archive]).
-
-
+% interface to open an archive
 archive_open(Filename) -> archive_open(Filename, -1).
 archive_open(Filename, Offset) ->
 	wrap_output(archive, open, [Filename, Offset]).
 
+
+% interface to close an archive
+archive_close(Archive) ->
+	wrap_output(archive, close, [Archive]).
+
+
+% interface to read a file
 file_read(Archive, FileNumber) ->
 	wrap_output(archive_file, read, [Archive, FileNumber]).
 
+% interface to get a filenumber
 file_number(Archive, Filename) ->
 	wrap_output(archive_file, number, [Archive, Filename]).
 

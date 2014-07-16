@@ -8,8 +8,9 @@
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
 
+% returns binary file data
 read(Archive, FileNumber) ->
-	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
+	ok = util:check_file_num(Archive, FileNumber),
 	%FileOffset = archive_file:offset(Archive, FileNumber),
 	Blocks = blocks(Archive, FileNumber),
 	%io:format("block: ~p~n", [Blocks]),
@@ -28,8 +29,9 @@ read(Archive, FileNumber) ->
 
 
 
+% returns number of blocks this file occupies
 blocks(Archive, FileNumber) ->
-	_Valid = util:check_file_num(Archive, FileNumber),
+	ok = util:check_file_num(Archive, FileNumber),
 	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
 	I = Map#map.block_table_indices,
 	Block = archive:get_block_at_offset(Archive#archive.block, I),
@@ -44,9 +46,10 @@ blocks(Archive, FileNumber) ->
 	end.
 
 
-offset(Archive, Number) ->
-	_Valid = util:check_file_num(Archive, Number),
-	Map = archive:get_map_at_offset(Archive#archive.map, Number),
+% returns offset of this file
+offset(Archive, FileNumber) ->
+	ok = util:check_file_num(Archive, FileNumber),
+	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
 	I = Map#map.block_table_indices,
 	Block = archive:get_block_at_offset(Archive#archive.block, I),
 	BlockEx = archive:get_block_ex_at_offset(Archive#archive.block_ex, I),
@@ -56,9 +59,9 @@ offset(Archive, Number) ->
 
 
 
-
+% returns unpacked size of this file
 unpacked_size(Archive, FileNumber) ->
-	_Valid = util:check_file_num(Archive, FileNumber),
+	ok = util:check_file_num(Archive, FileNumber),
 	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
 	I = Map#map.block_table_indices,
 	Block = archive:get_block_at_offset(Archive#archive.block, I),
@@ -66,6 +69,7 @@ unpacked_size(Archive, FileNumber) ->
 		
 
 
+% gets filenumber of this file
 number(Archive, Filename) ->
 	HTCount = Archive#archive.header#header.hash_table_count,
 	Hash1 = crypto:hash_string(Filename, 16#0) band (HTCount - 1),
@@ -74,7 +78,7 @@ number(Archive, Filename) ->
 	Number = loop_hash(Archive, Hash1, Hash1, Hash2, Hash3, HTCount),
 	Number.
 
-
+% internal function used by the number function
 loop_hash(Archive, I, Hash1, Hash2, Hash3, HTCount) ->
 	Hashes = Archive#archive.hash,
 	Hash = archive:get_hash_table_at_offset(Hashes, I),
@@ -96,18 +100,20 @@ loop_hash(Archive, I, Hash1, Hash2, Hash3, HTCount) ->
 			end
 	end.
 
-
+% is this file encrypted
 is_encrypted(Archive, FileNumber) ->
-	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
+	ok = util:check_file_num(Archive, FileNumber),
 	Flags = block:get_flags_at_file_number(Archive, FileNumber),
 	util:has_flag(Flags, ?FLAG_ENCRYPTED).
 
+% is this file compressed
 is_compressed(Archive, FileNumber) ->
-	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
+	ok = util:check_file_num(Archive, FileNumber),
 	Flags = block:get_flags_at_file_number(Archive, FileNumber),
 	util:has_flag(Flags, ?FLAG_COMPRESS_MULTI).
 
+% is this file imploded
 is_imploded(Archive, FileNumber) ->
-	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
+	ok = util:check_file_num(Archive, FileNumber),
 	Flags = block:get_flags_at_file_number(Archive, FileNumber),
 	util:has_flag(Flags, ?FLAG_COMPRESS_PKZIP).

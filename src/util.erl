@@ -48,15 +48,17 @@ sub_32bit([El|Rest]) ->
 	end, El, Rest).
 
 
-check_file_num(Archive, Num) ->
-	if Num > Archive#archive.files - 1 orelse Num < 0 -> throw(error_exist);
+% checks if a given filenumber is valid
+check_file_num(Archive, FileNumber) ->
+	if FileNumber > Archive#archive.files - 1 orelse FileNumber < 0 -> throw(error_exist);
 		true -> ok
 	end.
 
-check_block_num(Archive, Num) ->
-	if Num < 0 -> throw(error_exist);
+% checks if a given block number is valid
+check_block_num(Archive, BlockNumber) ->
+	if BlockNumber < 0 -> throw(error_exist);
 		true ->
-			Map = archive:get_map_at_offset(Archive#archive.map, Num),
+			Map = archive:get_map_at_offset(Archive#archive.map, BlockNumber),
 			I = Map#map.block_table_indices,
 			Block = archive:get_block_at_offset(Archive, I),
 			Flags = Block#block.flags,
@@ -67,24 +69,27 @@ check_block_num(Archive, Num) ->
 					BlockSize = Archive#archive.block_size,
 					(UnpackedSize + BlockSize - 1) div BlockSize
 			end,
-			if Num >= Val -> throw(error_exist);
+			if BlockNumber >= Val -> throw(error_exist);
 				true -> ok
 			end
 	end.
 
 
+% wrapper around file:open to simplify code
 file_open(Filename, Options) ->
 	case file:open(Filename, Options) of
 		{error, Error} -> throw(Error);
 		{ok, Fd} -> Fd
 	end.
 
+% wrapper around file:close to simplify code
 file_close(Fd) ->
 	case file:close(Fd) of
 		{error, Error} -> throw(Error);
 		ok -> ok
 	end.
 
+% wrapper around file:pread to simplify code
 file_pread(Fd, Offset, Size) ->
 	case file:pread(Fd, Offset, Size) of
 		{error, Error} -> throw(Error);
@@ -93,9 +98,12 @@ file_pread(Fd, Offset, Size) ->
 
 
 
+% check if a given flag is contained in some integer
 has_flag(Flags, Flag) ->
 	Flags band Flag /= 0.
 
+
+%% byte sizes for all common binary data structures
 
 file_packed_offset_size() ->
 	4.

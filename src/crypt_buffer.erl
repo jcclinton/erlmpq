@@ -3,11 +3,13 @@
 -export([get_buffer_by_offset/1]).
 
 
+% get an element from the crypt buffer at some offset
 get_buffer_by_offset(Offset) ->
 	% add one to offset because the buffer starts at indices zero
 	lists:nth(Offset+1, get_buffer()).
 
 
+% entire crypt buffer
 get_buffer() -> [
     16#55c636e2, 16#02be0170, 16#584b71d4, 16#2984f00e, 16#b682c809, 16#91cf876b,
     16#775a9c24, 16#597d5ca5, 16#5a1afeb2, 16#d3e9ce0d, 16#32cdcdf8, 16#b18201cd,

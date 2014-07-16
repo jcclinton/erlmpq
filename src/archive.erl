@@ -8,6 +8,7 @@
 -include("include/mpq_internal.hrl").
 
 
+% open an archive
 open(Filename, Offset) ->
 	{ArchiveOffset, HeaderSearch} = if Offset == -1 -> {0, true};
 		true -> {Offset, false}
@@ -30,8 +31,17 @@ open(Filename, Offset) ->
 	{ok, ArchiveOut}.
 
 
+% close an archive
 close(Archive) ->
 	ok = util:file_close(Archive#archive.fd).
+
+
+
+
+% functions to read data at some offset, or to update data at some offset
+% header is stored as a record on the archive object
+% block, hash and map are stored as binary on the archive object
+% file is a list on the archive object
 
 
 update_block_at_offset(BlocksBin, Block, OffsetIn) ->

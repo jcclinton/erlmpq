@@ -10,15 +10,15 @@
 
 
 block_seed(Archive, FileNumber, BlockNumber) ->
-	_ValidFileNumber = util:check_file_num(Archive, FileNumber),
-	_ValidBlockNumber = util:check_block_num(Archive, BlockNumber),
+	ok = util:check_file_num(Archive, FileNumber),
+	ok = util:check_block_num(Archive, BlockNumber),
 	File = archive:get_file_at_offset(Archive#archive.file, FileNumber),
 	File#file.seed + BlockNumber.
 
 
+% encrypt given buffer Buffer of size Size given seed Seed
 encrypt_block(Buffer, Size, Seed) ->
 	Seed2 = 16#EEEEEEEE,
-	%Buffer.
 	encrypt_block(Buffer, Size, Seed, Seed2, <<>>).
 
 encrypt_block(_, Size, _, _, Acc) when Size < 4 -> Acc;
@@ -37,11 +37,12 @@ encrypt_block(<<Buff?L, Rest/binary>>, Size, Seed, Seed2, Acc) ->
 
 
 
+% decrypt given buffer Buffer of size Size given seed Seed
 decrypt_block(Buffer, Size, Seed) ->
 	Seed2 = 16#EEEEEEEE,
-	%Buffer.
 	decrypt_block(Buffer, Size, Seed, Seed2, <<>>).
 
+% the buffer is decrypted 4 bytes at a time, so quit when there are less than 4 left
 decrypt_block(_, Size, _, _, Acc) when Size < 4 -> Acc;
 decrypt_block(<<Buff?L, Rest/binary>>, Size, Seed, Seed2, Acc) ->
 	if Size rem 100000 == 0 ->
@@ -57,6 +58,7 @@ decrypt_block(<<Buff?L, Rest/binary>>, Size, Seed, Seed2, Acc) ->
 	decrypt_block(Rest, Size-4, SeedOut, Seed2Out2, <<Acc/binary, Char?L>>).
 
 
+% decrypt key
 decrypt_key(Buffer, InSize, BlockSize) ->
 	Seed2In = 16#EEEEEEEE,
 	Offset = 16#400,
@@ -87,6 +89,8 @@ decrypt_key(Buffer, InSize, BlockSize) ->
 	end, 0, lists:seq(0, 16#100-1)).
 
 
+% hash a string
+% offset is used to get a value from the crypt buffer
 hash_string(String, Offset) ->
 	Seed1In = 16#7FED7FED,
 	Seed2In = 16#EEEEEEEE,

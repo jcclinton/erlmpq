@@ -13,6 +13,8 @@
 
 
 
+% buffer may have been decompressed using multiple compression algorithms
+% loop through each algorithm, check if its flag exists in the first byte of the buffer
 decompress_multi(<<DecompressFlag?B, BufferIn/binary>>) ->
 	% apply all requisite decompression functions based on flag
 	lists:foldl(fun({Flag, Fun}, Buffer) ->
