@@ -2,10 +2,42 @@
 
 -export([get_map_at_offset/2, get_hash_table_at_offset/2, get_block_at_offset/2, get_block_ex_at_offset/2, get_file_at_offset/2, get_file_packed_offset_at_offset/2]).
 -export([update_block_at_offset/3, update_file_at_offset/3]).
+-export([open/2, close/1]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
 
+
+open(Filename, Offset) ->
+	{ArchiveOffset, HeaderSearch} = if Offset == -1 -> {0, true};
+		true -> {Offset, false}
+	end,
+	{ok, Fd} = case file:open(Filename, [read, binary]) of
+		{error, Error} -> throw(Error);
+		Res -> Res
+	end,
+	InitialArchive = #archive{fd=Fd},
+	Archive = archive_builder:add_header_to_archive(InitialArchive, ArchiveOffset, HeaderSearch),
+
+	BuildFuns = [
+		fun archive_builder:add_header_ex_to_archive/1,
+		fun archive_builder:add_hash_table_to_archive/1,
+		fun archive_builder:add_block_to_archive/1,
+		fun archive_builder:add_block_ex_to_archive/1,
+		fun archive_builder:add_map_to_archive/1,
+		fun archive_builder:add_file_to_archive/1
+	],
+	ArchiveOut = lists:foldl(fun(Fun, Arch) ->
+		Fun(Arch)
+	end, Archive, BuildFuns),
+	{ok, ArchiveOut}.
+
+
+close(Archive) ->
+	case file:close(Archive#archive.fd) of
+		ok -> ok;
+		{error, Error} -> throw(Error)
+	end.
 
 
 update_block_at_offset(BlocksBin, Block, OffsetIn) ->

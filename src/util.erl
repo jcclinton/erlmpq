@@ -48,10 +48,12 @@ sub_32bit([El|Rest]) ->
 
 
 check_file_num(Archive, Num) ->
-	Num > Archive#archive.files - 1 orelse Num < 0.
+	if Num > Archive#archive.files - 1 orelse Num < 0 -> throw(error_exist);
+		true -> ok
+	end.
 
 check_block_num(Archive, Num) ->
-	if Num < 0 -> false;
+	if Num < 0 -> throw(error_exist);
 		true ->
 			Map = archive:get_map_at_offset(Archive#archive.map, Num),
 			I = Map#map.block_table_indices,
@@ -64,8 +66,8 @@ check_block_num(Archive, Num) ->
 					BlockSize = Archive#archive.block_size,
 					(UnpackedSize + BlockSize - 1) div BlockSize
 			end,
-			if Num >= Val -> false;
-				true -> true
+			if Num >= Val -> throw(error_exist);
+				true -> ok
 			end
 	end.
 

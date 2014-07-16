@@ -53,6 +53,7 @@ decompress_zlib(Buffer) ->
 	end.
 
 
+
 get_decompression_table() ->
 	[
 		{?COMPRESSION_HUFFMAN, fun ?MODULE:decompress_huffman/1},

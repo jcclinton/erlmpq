@@ -38,13 +38,16 @@ extract_dbc_file(File, OutputDir, DataDir) ->
 %extract file list from an archive for a given file extension
 get_file_list_to(Archive, Ext) ->
 	FileNumber = mpq:file_number(Archive, "(listfile)"),
+	%io:format("filenumber: ~p~n", [FileNumber]),
 	{ArchiveOut, Buffer} = mpq:file_read(Archive, FileNumber),
 	FileList1 = binary:split(Buffer, <<"\r\n">>, [global]),
+	%io:format("filelist: ~p~n", [FileList1]),
 	FileList = lists:filter(fun(Name) ->
 		if Name == <<"">> -> false;
 			Name /= <<"">> ->
 				% check if it has the correct extension
 				NameExt = binary:part(Name, {byte_size(Name), byte_size(Ext) * -1}),
+				%io:format("ext: ~p~n", [NameExt]),
 				if NameExt == Ext -> true;
 					NameExt /= Ext -> false
 				end
