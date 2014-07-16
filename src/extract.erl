@@ -13,14 +13,14 @@
 
 
 
-decompress_multi(<<DecompressFlag?B, Buffer/binary>>) ->
+decompress_multi(<<DecompressFlag?B, BufferIn/binary>>) ->
 	% apply all requisite decompression functions based on flag
-	lists:foldl(fun({Flag, Fun}, BufferIn) ->
+	lists:foldl(fun({Flag, Fun}, Buffer) ->
 		HasFlag = util:has_flag(DecompressFlag, Flag),
-		if HasFlag -> Fun(BufferIn);
+		if HasFlag -> Fun(Buffer);
 			true -> Buffer
 		end
-	end, Buffer, get_decompression_table()).
+	end, BufferIn, get_decompression_table()).
 
 decompress_wave_stereo(Buffer) ->
 	io:format("attemping to decompress buffer using unimplemented decompression type: ~p~n", ["wave stereo"]),
