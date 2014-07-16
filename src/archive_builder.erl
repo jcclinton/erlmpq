@@ -7,6 +7,9 @@
 -include("include/mpq_internal.hrl").
 
 
+% adds file list to archive object
+% initially file list is just a list of empty records
+% the records will get initialized when a file is opened
 add_file_to_archive(Archive) ->
 	BlockCount = Archive#archive.header#header.block_table_count,
 	Size = util:file_size() * BlockCount,
@@ -18,6 +21,8 @@ add_file_to_archive(Archive) ->
 
 
 
+% add binary map object to archive
+% map is used to map hash table indices to actual block locations
 add_map_to_archive(Archive) ->
 	TableCount = Archive#archive.header#header.block_table_count,
 	EmptyMap = binary:copy(<<0?Q>>, TableCount),
@@ -42,28 +47,31 @@ add_map_to_archive(Archive) ->
 	Archive#archive{map=Map, files=Count}.
 
 
+% block extension is used for large file sizes
 add_block_ex_to_archive(Archive) ->
 	if Archive#archive.header_ex#header_ex.extended_offset > 0 ->
 		Offset = Archive#archive.header_ex#header_ex.extended_offset + Archive#archive.archive_offset,
 		Size = util:block_ex_size() * Archive#archive.header#header.block_table_count,
 
-		{ok, BlocksExBin} = file:pread(Archive#archive.fd, Offset, Size),
+		BlocksExBin = util:file_pread(Archive#archive.fd, Offset, Size),
 		Archive#archive{block_ex=BlocksExBin};
 	true -> Archive
 	end.
 
 
+% block stores the binary file data
 add_block_to_archive(Archive) ->
 	BlockTableOffsetHigh = Archive#archive.header_ex#header_ex.block_table_offset_high bsl 32,
 	Offset = Archive#archive.header#header.block_table_offset + Archive#archive.archive_offset + BlockTableOffsetHigh,
 	Size = util:block_size() * Archive#archive.header#header.block_table_count,
 
-	{ok, BlocksBin} = file:pread(Archive#archive.fd, Offset, Size),
+	BlocksBin = util:file_pread(Archive#archive.fd, Offset, Size),
 	Seed = archive_crypto:hash_string("(block table)", 16#300),
 	DecryptedBlocks = archive_crypto:decrypt_block(BlocksBin, Size, Seed),
 	Archive#archive{block=DecryptedBlocks}.
 
 
+% hash table stores the binary hash table used to look up block locations
 add_hash_table_to_archive(Archive) ->
 	ArchiveOffset = Archive#archive.archive_offset,
 	HashTableOffset = Archive#archive.header#header.hash_table_offset,
@@ -73,7 +81,7 @@ add_hash_table_to_archive(Archive) ->
 	TableCount = Archive#archive.header#header.hash_table_count,
 	Size = util:hash_table_size() * TableCount,
 
-	{ok, HashBin} = file:pread(Archive#archive.fd, Offset, Size),
+	HashBin = util:file_pread(Archive#archive.fd, Offset, Size),
 	Seed = archive_crypto:hash_string("(hash table)", 16#300),
 	DecryptedHashes = archive_crypto:decrypt_block(HashBin, Size, Seed),
 	Archive#archive{hash=DecryptedHashes}.
@@ -81,11 +89,12 @@ add_hash_table_to_archive(Archive) ->
 
 
 
+% extended header is used for large files in v2
 add_header_ex_to_archive(Archive) ->
 	if Archive#archive.header#header.version == ?LIBMPQ_ARCHIVE_VERSION_TWO ->
 		ExOffset = util:header_size() + Archive#archive.archive_offset,
 		ExSize = util:header_ex_size(),
-		{ok, HeaderEx} = file:pread(Archive#archive.fd, ExOffset, ExSize),
+		HeaderEx = util:file_pread(Archive#archive.fd, ExOffset, ExSize),
 		<<ExtendedOffset?Q, HashTableOffsetHigh?W, BlockTableOffsetHigh?W>> = HeaderEx,
 		HeaderExRecord = #header_ex{
 			extended_offset = ExtendedOffset,
@@ -97,13 +106,16 @@ add_header_ex_to_archive(Archive) ->
 	end.
 
 
+% header is stored on the archive object as a record
+% it contains some metadata about the archive
+% the header may not be at the beginning of the file
 add_header_to_archive(ArchiveIn, ArchiveOffset, HeaderSearch) ->
 	case extract_header(ArchiveIn, ArchiveOffset) of
 		{ok, Header} ->
 			BlockSize = ?BLOCK_SIZE bsl Header#header.block_size,
 			ArchiveIn#archive{header=Header, block_size=BlockSize, archive_offset=ArchiveOffset};
 		{error, not_found} ->
-			if not HeaderSearch -> {error, mpq_error_format};
+			if not HeaderSearch -> throw(mpq_error_format);
 				HeaderSearch -> add_header_to_archive(ArchiveIn, ArchiveOffset + ?BLOCK_SIZE, HeaderSearch)
 			end
 	end.
@@ -112,9 +124,10 @@ add_header_to_archive(ArchiveIn, ArchiveOffset, HeaderSearch) ->
 
 %% private
 
+% look for the header at some given location
 extract_header(ArchiveIn, ArchiveOffset) ->
 	HeaderSize = util:header_size(),
-	{ok, Header} = file:pread(ArchiveIn#archive.fd, ArchiveOffset, HeaderSize),
+	Header = util:file_pread(ArchiveIn#archive.fd, ArchiveOffset, HeaderSize),
 	<<MpqMagic?L, OldHeaderSize?L, ArchiveVersion?L, Version?W, BlockSize?W, HashTableOffset?L, BlockTableOffset?L, HashTableCount?L, BlockTableCount?L>> = Header,
 	ExpectedMagic = ?LIBMPQ_HEADER,
 	if ExpectedMagic == MpqMagic ->
