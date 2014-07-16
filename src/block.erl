@@ -75,7 +75,7 @@ read(Archive, FileNumber, BlockNumber, OutSize) ->
 	InSize = if PackedOffset2 == 0 -> PackedOffset;
 		true -> PackedOffset2 - PackedOffset
 	end,
-	{ok, BufferIn} = file:pread(Archive#archive.fd, BlockOffset, InSize),
+	BufferIn = util:file_pread(Archive#archive.fd, BlockOffset, InSize),
 	IsEncrypted = archive_file:is_encrypted(Archive, FileNumber),
 	Buffer1 = if IsEncrypted ->
 			Seed = crypto:block_seed(Archive, FileNumber, BlockNumber),
@@ -150,7 +150,7 @@ open_offset_internal(Archive, FileNumber) ->
 			BlockExs = Archive#archive.block_ex,
 			BlockEx = archive:get_block_ex_at_offset(BlockExs, I),
 			Offset = Block#block.offset + (BlockEx#block_ex.offset_high bsl 32) + Archive#archive.archive_offset,
-			{ok, PackedOffset} = file:pread(Archive#archive.fd, Offset, PackedSize),
+			PackedOffset = util:file_pread(Archive#archive.fd, Offset, PackedSize),
 			<<FirstWord?L, _/binary>> = PackedOffset,
 			NewFlags = if FirstWord /= PackedSize andalso FirstWord /= PackedSize + 4 ->
 					Flags bor ?FLAG_ENCRYPTED;

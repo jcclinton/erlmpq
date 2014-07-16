@@ -3,6 +3,7 @@
 -export([map_size/0, hash_table_size/0, header_size/0, header_ex_size/0, block_size/0, block_ex_size/0, file_size/0, file_packed_offset_size/0]).
 -export([add_32bit/1, sub_32bit/1, has_flag/2, check_file_num/2, check_block_num/2]).
 -export([make_dir/2]).
+-export([file_open/2, file_close/1, file_pread/3]).
 
 -include("include/binary.hrl").
 -include("include/mpq_internal.hrl").
@@ -69,6 +70,25 @@ check_block_num(Archive, Num) ->
 			if Num >= Val -> throw(error_exist);
 				true -> ok
 			end
+	end.
+
+
+file_open(Filename, Options) ->
+	case file:open(Filename, Options) of
+		{error, Error} -> throw(Error);
+		{ok, Fd} -> Fd
+	end.
+
+file_close(Fd) ->
+	case file:close(Fd) of
+		{error, Error} -> throw(Error);
+		ok -> ok
+	end.
+
+file_pread(Fd, Offset, Size) ->
+	case file:pread(Fd, Offset, Size) of
+		{error, Error} -> throw(Error);
+		{ok, Result} -> Result
 	end.
 
 

@@ -12,10 +12,7 @@ open(Filename, Offset) ->
 	{ArchiveOffset, HeaderSearch} = if Offset == -1 -> {0, true};
 		true -> {Offset, false}
 	end,
-	{ok, Fd} = case file:open(Filename, [read, binary]) of
-		{error, Error} -> throw(Error);
-		Res -> Res
-	end,
+	Fd = util:file_open(Filename, [read, binary]),
 	InitialArchive = #archive{fd=Fd},
 	Archive = archive_builder:add_header_to_archive(InitialArchive, ArchiveOffset, HeaderSearch),
 
@@ -34,10 +31,7 @@ open(Filename, Offset) ->
 
 
 close(Archive) ->
-	case file:close(Archive#archive.fd) of
-		ok -> ok;
-		{error, Error} -> throw(Error)
-	end.
+	ok = util:file_close(Archive#archive.fd).
 
 
 update_block_at_offset(BlocksBin, Block, OffsetIn) ->

@@ -12,9 +12,9 @@ extract_dbc_files(MpqFileList, OutputDir, DataDir) ->
 	end, MpqFileList),
 	ok.
 
-extract_dbc_file(File, OutputDir, DataDir) ->
-	Filename = DataDir ++ File ++ ".MPQ",
-	{ok, ArchiveInitial} = mpq:archive_open(Filename),
+extract_dbc_file(MpqFilename, OutputDir, DataDir) ->
+	MpqFilePath = DataDir ++ MpqFilename ++ ".MPQ",
+	{ok, ArchiveInitial} = mpq:archive_open(MpqFilePath),
 	{Archive, FileList} = get_file_list_to(ArchiveInitial, <<".dbc">>),
 
 	ArchiveOut = lists:foldl(fun(FilenameIn, ArchiveIn) ->

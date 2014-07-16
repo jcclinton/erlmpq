@@ -35,10 +35,8 @@ archive() ->
 	{ok, Archive} = mpq:archive_open(Filename),
 	Archive.
 
-create_files(Archive) ->
-	OutDir = get_output_dir(),
-	{ArchiveOut, FileList} = tools:get_file_list_to(Archive, <<".dbc">>),
-	%extract_dbc_files(ArchiveOut, FileList, OutDir),
+get_filelist(Archive) ->
+	{_ArchiveOut, FileList} = tools:get_file_list_to(Archive, <<".dbc">>),
 	FileList.
 
 
