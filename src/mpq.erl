@@ -16,10 +16,20 @@ archive_close(Archive) ->
 
 archive_open(Filename) -> archive_open(Filename, -1).
 archive_open(Filename, Offset) ->
+	try archive_open_internal(Filename, Offset) of
+		Out -> Out
+	catch
+		Err -> {error, Err}
+	end.
+
+archive_open_internal(Filename, Offset) ->
 	{ArchiveOffset, HeaderSearch} = if Offset == -1 -> {0, true};
 		true -> {Offset, false}
 	end,
-	{ok, Fd} = file:open(Filename, [read, binary]),
+	{ok, Fd} = case file:open(Filename, [read, binary]) of
+		{error, Error} -> throw(Error);
+		Res -> Res
+	end,
 	InitialArchive = #archive{fd=Fd},
 	Archive = archive_builder:add_header_to_archive(InitialArchive, ArchiveOffset, HeaderSearch),
 
