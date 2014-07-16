@@ -59,8 +59,8 @@ add_block_to_archive(Archive) ->
 	Size = util:block_size() * Archive#archive.header#header.block_table_count,
 
 	{ok, BlocksBin} = file:pread(Archive#archive.fd, Offset, Size),
-	Seed = crypto:hash_string("(block table)", 16#300),
-	DecryptedBlocks = crypto:decrypt_block(BlocksBin, Size, Seed),
+	Seed = archive_crypto:hash_string("(block table)", 16#300),
+	DecryptedBlocks = archive_crypto:decrypt_block(BlocksBin, Size, Seed),
 	Archive#archive{block=DecryptedBlocks}.
 
 
@@ -74,8 +74,8 @@ add_hash_table_to_archive(Archive) ->
 	Size = util:hash_table_size() * TableCount,
 
 	{ok, HashBin} = file:pread(Archive#archive.fd, Offset, Size),
-	Seed = crypto:hash_string("(hash table)", 16#300),
-	DecryptedHashes = crypto:decrypt_block(HashBin, Size, Seed),
+	Seed = archive_crypto:hash_string("(hash table)", 16#300),
+	DecryptedHashes = archive_crypto:decrypt_block(HashBin, Size, Seed),
 	Archive#archive{hash=DecryptedHashes}.
 
 

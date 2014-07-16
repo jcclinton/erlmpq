@@ -19,7 +19,10 @@ extract_dbc_files(MpqFileList, OutputDir, DataDir) ->
 extract_dbc_file(MpqFilename, OutputDir, DataDir) ->
 	MpqFilePath = DataDir ++ MpqFilename ++ ".MPQ",
 	{ok, ArchiveInitial} = mpq:archive_open(MpqFilePath),
-	{Archive, FileList} = get_file_list_to(ArchiveInitial, <<".dbc">>),
+	{Archive, FileList} = case get_file_list_to(ArchiveInitial, <<".dbc">>) of
+		{error, Error} -> throw(Error);
+		Result -> Result
+	end,
 
 	ArchiveOut = lists:foldl(fun(FilenameIn, ArchiveIn) ->
 		% filenamess are in the form dbcclient//filename.dbc
@@ -32,7 +35,10 @@ extract_dbc_file(MpqFilename, OutputDir, DataDir) ->
 		util:make_dir(OutputDir, Filename),
 		{ok, Fd} = file:open(Name, [write, binary]),
 		FileNumber = mpq:file_number(ArchiveIn, binary_to_list(FilenameIn)),
-		{ArchiveOut, Buffer} = mpq:file_read(ArchiveIn, FileNumber),
+		{ArchiveOut, Buffer} = case mpq:file_read(ArchiveIn, FileNumber) of
+			{error, Error1} -> throw(Error1);
+			Res -> Res
+		end,
 
 		ok = file:write(Fd, Buffer),
 		file:close(Fd),
@@ -47,18 +53,21 @@ extract_dbc_file(MpqFilename, OutputDir, DataDir) ->
 get_file_list_to(Archive, Ext) ->
 	FileNumber = mpq:file_number(Archive, "(listfile)"),
 	%io:format("filenumber: ~p~n", [FileNumber]),
-	{ArchiveOut, Buffer} = mpq:file_read(Archive, FileNumber),
-	FileList1 = binary:split(Buffer, <<"\r\n">>, [global]),
-	%io:format("filelist: ~p~n", [FileList1]),
-	FileList = lists:filter(fun(Name) ->
-		if Name == <<"">> -> false;
-			Name /= <<"">> ->
-				% check if it has the correct extension
-				NameExt = binary:part(Name, {byte_size(Name), byte_size(Ext) * -1}),
-				%io:format("ext: ~p~n", [NameExt]),
-				if NameExt == Ext -> true;
-					NameExt /= Ext -> false
+	case mpq:file_read(Archive, FileNumber) of
+		{error, Error} -> {error, Error};
+		{ArchiveOut, Buffer} ->
+			FileList1 = binary:split(Buffer, <<"\r\n">>, [global]),
+			%io:format("filelist: ~p~n", [FileList1]),
+			FileList = lists:filter(fun(Name) ->
+				if Name == <<"">> -> false;
+					Name /= <<"">> ->
+						% check if it has the correct extension
+						NameExt = binary:part(Name, {byte_size(Name), byte_size(Ext) * -1}),
+						%io:format("ext: ~p~n", [NameExt]),
+						if NameExt == Ext -> true;
+							NameExt /= Ext -> false
+						end
 				end
-		end
-	end, FileList1),
-	{ArchiveOut, FileList}.
+			end, FileList1),
+			{ArchiveOut, FileList}
+	end.

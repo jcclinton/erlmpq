@@ -45,7 +45,7 @@ decompress_block(Buffer, InSize, OutSize, Flag) ->
 % find unpacked size of a block
 unpacked_size(Archive, FileNumber, BlockNumber) ->
 	ok = util:check_file_num(Archive, FileNumber),
-	ok = util:check_block_num(Archive, BlockNumber),
+	%ok = util:check_block_num(Archive, BlockNumber),
 	Map = archive:get_map_at_offset(Archive#archive.map, FileNumber),
 	I = Map#map.block_table_indices,
 	Block = archive:get_block_at_offset(Archive#archive.block, I),
@@ -83,8 +83,8 @@ read(Archive, FileNumber, BlockNumber, OutSize) ->
 	BufferIn = util:file_pread(Archive#archive.fd, BlockOffset, InSize),
 	IsEncrypted = archive_file:is_encrypted(Archive, FileNumber),
 	Buffer1 = if IsEncrypted ->
-			Seed = crypto:block_seed(Archive, FileNumber, BlockNumber),
-			crypto:decrypt_block(BufferIn, InSize, Seed);
+			Seed = archive_crypto:block_seed(Archive, FileNumber, BlockNumber),
+			archive_crypto:decrypt_block(BufferIn, InSize, Seed);
 		true ->
 			BufferIn
 	end,
@@ -165,8 +165,8 @@ open_offset_internal(Archive, FileNumber) ->
 			end,
 			IsEncrypted = util:has_flag(NewFlags, ?FLAG_ENCRYPTED),
 			File = if IsEncrypted ->
-					Seed = crypto:decrypt_key(PackedOffset, PackedSize, BlockSize),
-					DecryptedPackedOffset = crypto:decrypt_block(PackedOffset, PackedSize, Seed - 1),
+					Seed = archive_crypto:decrypt_key(PackedOffset, PackedSize, BlockSize),
+					DecryptedPackedOffset = archive_crypto:decrypt_block(PackedOffset, PackedSize, Seed - 1),
 					#file{seed=Seed, packed_offset=DecryptedPackedOffset, open_count=OpenCount};
 				true ->
 					#file{seed=0, packed_offset=PackedOffset, open_count=OpenCount}

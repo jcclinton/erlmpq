@@ -72,9 +72,9 @@ unpacked_size(Archive, FileNumber) ->
 % gets filenumber of this file
 number(Archive, Filename) ->
 	HTCount = Archive#archive.header#header.hash_table_count,
-	Hash1 = crypto:hash_string(Filename, 16#0) band (HTCount - 1),
-	Hash2 = crypto:hash_string(Filename, 16#100),
-	Hash3 = crypto:hash_string(Filename, 16#200),
+	Hash1 = archive_crypto:hash_string(Filename, 16#0) band (HTCount - 1),
+	Hash2 = archive_crypto:hash_string(Filename, 16#100),
+	Hash3 = archive_crypto:hash_string(Filename, 16#200),
 	Number = loop_hash(Archive, Hash1, Hash1, Hash2, Hash3, HTCount),
 	Number.
 

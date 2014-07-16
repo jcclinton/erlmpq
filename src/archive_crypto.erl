@@ -1,4 +1,4 @@
--module(crypto).
+-module(archive_crypto).
 
 -export([decrypt_block/3, encrypt_block/3]).
 -export([hash_string/2]).

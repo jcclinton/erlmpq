@@ -50,17 +50,18 @@ sub_32bit([El|Rest]) ->
 
 % checks if a given filenumber is valid
 check_file_num(Archive, FileNumber) ->
-	if FileNumber > Archive#archive.files - 1 orelse FileNumber < 0 -> throw(error_exist);
+	if FileNumber > Archive#archive.files - 1 orelse FileNumber < 0 -> throw(error_invalid_file_number);
 		true -> ok
 	end.
 
 % checks if a given block number is valid
 check_block_num(Archive, BlockNumber) ->
-	if BlockNumber < 0 -> throw(error_exist);
+	Error = error_invalid_block_number,
+	if BlockNumber < 0 -> throw(Error);
 		true ->
 			Map = archive:get_map_at_offset(Archive#archive.map, BlockNumber),
 			I = Map#map.block_table_indices,
-			Block = archive:get_block_at_offset(Archive, I),
+			Block = archive:get_block_at_offset(Archive#archive.block, I),
 			Flags = Block#block.flags,
 			HasFlag = util:has_flag(Flags, ?FLAG_SINGLE),
 			Val = if HasFlag /= 0 -> 1;
@@ -69,7 +70,7 @@ check_block_num(Archive, BlockNumber) ->
 					BlockSize = Archive#archive.block_size,
 					(UnpackedSize + BlockSize - 1) div BlockSize
 			end,
-			if BlockNumber >= Val -> throw(error_exist);
+			if BlockNumber >= Val -> throw(Error);
 				true -> ok
 			end
 	end.
